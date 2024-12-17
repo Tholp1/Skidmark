@@ -1,0 +1,3 @@
+Skidmark progress: functions are prefixed with '!'
+theres currently only one so far and its !include("b.sk")
+
