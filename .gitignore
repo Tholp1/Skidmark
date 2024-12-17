@@ -1,4 +1,5 @@
 /target
-*.out
+*.skidout
+*.html
 .vscode
 Cargo.lock

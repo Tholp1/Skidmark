@@ -20,8 +20,9 @@ pub struct BlockEdge {
 }
 
 pub struct InputFile {
-    pub filename_in: String,
-    pub filename_out: String,
+    pub filename_input: String,
+    pub filename_skidout: String,
+    pub filename_htmlout: String,
     pub tokens: Vec<Token>,
     pub block_edges: Vec<BlockEdge>,
 }
@@ -36,8 +37,9 @@ pub struct Macro<'a> {
 impl InputFile {
     pub fn new() -> InputFile {
         InputFile {
-            filename_in: "".to_string(),
-            filename_out: "".to_string(),
+            filename_input: "".to_string(),
+            filename_skidout: "".to_string(),
+            filename_htmlout: "".to_string(),
             tokens: Vec::new(),
             block_edges: Vec::new(),
         }

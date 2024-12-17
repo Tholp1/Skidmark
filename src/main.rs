@@ -15,6 +15,7 @@ use std::{
 };
 use stringtools::{collect_arguments, split_keep_delimiters, strings_to_tokens};
 use types::{InputFile, Macro, Token};
+use markdown::{to_html_with_options, CompileOptions, Options};
 
 static DELIMITERS: [char; 7] = [' ', '\n', '\t', '(', ')', '{', '}'];
 
@@ -25,8 +26,9 @@ fn main() {
 
     for file in args.iter() {
         let mut new_file = types::InputFile::new();
-        new_file.filename_in = file.to_string();
-        new_file.filename_out = file.to_string() + ".out";
+        new_file.filename_input = file.to_string();
+        new_file.filename_skidout = file.to_string() + ".skidout";
+        new_file.filename_htmlout = file.to_string() + ".html";
         files.push(new_file);
     }
     println!("{:?}", args);
@@ -36,10 +38,10 @@ fn main() {
 }
 
 fn process_file(file: &mut InputFile) {
-    let contents = fs::read_to_string(&file.filename_in).expect("File unreadable or missing");
+    let contents = fs::read_to_string(&file.filename_input).expect("File unreadable or missing");
     //println!("{}\n {}", f.filename_out, contents);
 
-    file.tokens = strings_to_tokens(split_keep_delimiters(contents), file.filename_in.clone());
+    file.tokens = strings_to_tokens(split_keep_delimiters(contents), file.filename_input.clone());
 
     let mut index = 0;
 
@@ -56,7 +58,7 @@ fn process_file(file: &mut InputFile) {
                     println!("Found a macro ({})", m.symbol);
                     let mut ephemeral = false;
                     if file.tokens[index].contents.starts_with('&')
-                        && file.tokens[index].origin_file != file.filename_in
+                        && file.tokens[index].origin_file != file.filename_input
                     {
                         println!("Skipping Ephermal macro from included file.");
                         ephemeral = true;
@@ -87,9 +89,12 @@ fn process_file(file: &mut InputFile) {
         index += 1;
     }
     //println!("{:?}", file.tokens);
-    let mut full_output: String = "".to_string();
+    let mut skid_output: String = "".to_string();
     for t in &file.tokens {
-        full_output += &t.contents;
+        skid_output += &t.contents;
     }
-    fs::write(&file.filename_out, full_output).expect("Couldn't write to file");
+    fs::write(&file.filename_skidout, &skid_output).expect("Couldn't write skid to file");
+
+    let html_output = markdown::to_html_with_options(&skid_output, &Options::gfm()).unwrap();
+    fs::write(&file.filename_htmlout, &html_output).expect("Couldn't write html to file");
 }
