@@ -1,5 +1,5 @@
 use core::fmt;
-use std::{fmt::Arguments, ops::Index, process::exit};
+use std::{fmt::Arguments, ops::Index, process::exit, thread::sleep};
 
 use super::DELIMITERS;
 use crate::types::Token;
@@ -81,23 +81,43 @@ pub fn split_keep_delimiters(instr: String) -> Vec<String> {
     return output;
 }
 
-pub fn strings_to_tokens(instrings: Vec<String>, origin_file: String) -> Vec<Token> {
+pub fn strings_to_tokens(in_strings: Vec<String>, origin_file: String) -> Vec<Token> {
     let mut tokens = Vec::new();
-    let mut linecount: u32 = 1;
+    let mut line_count: u32 = 1;
 
-    for str in instrings {
-        let currentline = linecount;
+    for str in in_strings {
+        let current_line = line_count;
         for char in str.chars() {
             if char == '\n' {
-                linecount += 1;
+                line_count += 1;
             }
         }
-        let token: Token = Token::new(str, origin_file.clone(), currentline);
+        let token: Token = Token::new(str, origin_file.clone(), current_line);
         tokens.push(token);
     }
 
     return tokens;
 }
+
+// Need to do some special case stuff so you can macros without spaces between
+pub fn split_to_tokens(instr: String, origin_file: String) -> Vec<Token> {
+    let split = split_keep_delimiters(instr);
+    let mut new_split: Vec<String> = Vec::new();
+    for s in split {
+        let prefix_offset = s.find(&['!', '&']).unwrap_or(s.len() + 1);
+        if prefix_offset != 0 && prefix_offset != s.len() + 1 {
+            let (first, second) = s.split_at(prefix_offset);
+            println!("\"{}\", \"{}\"", first, second);
+            new_split.push(first.to_string());
+            new_split.push(second.to_string());
+        } else {
+            new_split.push(s);
+        }
+        //sleep(std::time::Duration::from_millis(10));
+    }
+    return strings_to_tokens(new_split, origin_file);
+}
+
 pub fn next_nonwhitespace_token(tokens: &Vec<Token>, index: usize) -> (bool, usize) {
     while index < tokens.len() {
         if tokens[index].contents.starts_with([' ', '\t', '\n']) {

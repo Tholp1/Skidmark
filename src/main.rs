@@ -7,15 +7,15 @@ use macros::{
     include::{self, macro_include},
     MACRO_LIST,
 };
+use markdown::{to_html_with_options, CompileOptions, Options};
 use std::{
     env,
     fs::{self, File},
     io::Write,
     process::{exit, Output},
 };
-use stringtools::{collect_arguments, split_keep_delimiters, strings_to_tokens};
+use stringtools::{collect_arguments, split_keep_delimiters, split_to_tokens, strings_to_tokens};
 use types::{InputFile, Macro, Token};
-use markdown::{to_html_with_options, CompileOptions, Options};
 
 static DELIMITERS: [char; 7] = [' ', '\n', '\t', '(', ')', '{', '}'];
 
@@ -41,7 +41,8 @@ fn process_file(file: &mut InputFile) {
     let contents = fs::read_to_string(&file.filename_input).expect("File unreadable or missing");
     //println!("{}\n {}", f.filename_out, contents);
 
-    file.tokens = strings_to_tokens(split_keep_delimiters(contents), file.filename_input.clone());
+    //file.tokens = strings_to_tokens(split_keep_delimiters(contents), file.filename_input.clone());
+    file.tokens = split_to_tokens(contents, file.filename_input.clone());
 
     let mut index = 0;
 
@@ -95,6 +96,18 @@ fn process_file(file: &mut InputFile) {
     }
     fs::write(&file.filename_skidout, &skid_output).expect("Couldn't write skid to file");
 
-    let html_output = markdown::to_html_with_options(&skid_output, &Options::gfm()).unwrap();
+    //let html_output = markdown::to_html(&skid_output);
+    let html_output = markdown::to_html_with_options(
+        &skid_output,
+        &Options {
+            compile: CompileOptions {
+                allow_dangerous_html: true,
+                allow_dangerous_protocol: true,
+                ..CompileOptions::gfm()
+            },
+            ..Options::gfm()
+        },
+    )
+    .unwrap();
     fs::write(&file.filename_htmlout, &html_output).expect("Couldn't write html to file");
 }
