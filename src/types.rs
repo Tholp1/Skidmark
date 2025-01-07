@@ -24,10 +24,11 @@ pub struct InputFile {
     pub filename_skidout: String,
     pub filename_htmlout: String,
     pub tokens: Vec<Token>,
+    pub working_index: usize,
     pub block_edges: Vec<BlockEdge>,
 }
 
-type MacroExpansion = fn(&InputFile, &Vec<String>) -> Vec<Token>;
+type MacroExpansion = fn(&mut InputFile, &Vec<String>) -> Vec<Token>;
 pub struct Macro<'a> {
     pub symbol: &'a str,
     pub expand: MacroExpansion,
@@ -41,6 +42,7 @@ impl InputFile {
             filename_skidout: "".to_string(),
             filename_htmlout: "".to_string(),
             tokens: Vec::new(),
+            working_index: 0,
             block_edges: Vec::new(),
         }
     }

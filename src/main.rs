@@ -3,10 +3,7 @@ mod macros;
 mod stringtools;
 mod types;
 
-use macros::{
-    include::{self, macro_include},
-    MACRO_LIST,
-};
+use macros::MACRO_LIST;
 use markdown::{to_html_with_options, CompileOptions, Options};
 use std::{
     env,
@@ -44,36 +41,45 @@ fn process_file(file: &mut InputFile) {
     //file.tokens = strings_to_tokens(split_keep_delimiters(contents), file.filename_input.clone());
     file.tokens = split_to_tokens(contents, file.filename_input.clone());
 
-    let mut index = 0;
-
-    while index < file.tokens.len() {
+    while file.working_index < file.tokens.len() {
         //look for macros or blocks
         //println!(">\"{}\"<", file.tokens[index].contents);
 
-        if file.tokens[index].contents.starts_with(['!', '&']) {
-            let mut matched = false;
+        if file.tokens[file.working_index]
+            .contents
+            .starts_with(['!', '&'])
+        {
+            let mut matched: bool = false;
 
             for m in &MACRO_LIST {
-                if &file.tokens[index].contents.trim()[1..] == m.symbol {
+                let symbol = file.tokens[file.working_index].contents.trim();
+                if symbol.len() < 2
+                {
+                    continue;
+                }
+                if &symbol[1..] == m.symbol {
                     matched = true;
                     println!("Found a macro ({})", m.symbol);
                     let mut ephemeral = false;
-                    if file.tokens[index].contents.starts_with('&')
-                        && file.tokens[index].origin_file != file.filename_input
+                    if file.tokens[file.working_index].contents.starts_with('&')
+                        && file.tokens[file.working_index].origin_file != file.filename_input
                     {
                         println!("Skipping Ephermal macro from included file.");
                         ephemeral = true;
                     }
 
-                    let (args, tokcount) = collect_arguments(&file.tokens[index..]);
+                    let (args, tokcount) = collect_arguments(&file.tokens[file.working_index..]);
                     let expansion: Vec<Token>;
                     if ephemeral {
                         expansion = Vec::new();
                     } else {
-                        expansion = (m.expand)(&file, &args);
+                        expansion = (m.expand)(file, &args);
                     }
-                    file.tokens.remove(index);
-                    file.tokens.splice(index..(index + tokcount - 1), expansion);
+                    file.tokens.remove(file.working_index);
+                    file.tokens.splice(
+                        file.working_index..(file.working_index + tokcount - 1),
+                        expansion,
+                    );
                 }
             }
 
@@ -82,12 +88,12 @@ fn process_file(file: &mut InputFile) {
             if !matched {
                 println!(
                     "Token written as a function but no such function exists \"{}\"",
-                    file.tokens[index].contents.trim()
+                    file.tokens[file.working_index].contents.trim()
                 );
             }
         }
 
-        index += 1;
+        file.working_index += 1;
     }
     //println!("{:?}", file.tokens);
     let mut skid_output: String = "".to_string();
@@ -110,4 +116,5 @@ fn process_file(file: &mut InputFile) {
     )
     .unwrap();
     fs::write(&file.filename_htmlout, &html_output).expect("Couldn't write html to file");
+    println!("{} written.", file.filename_htmlout);
 }
