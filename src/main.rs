@@ -50,41 +50,50 @@ fn process_file(file: &mut InputFile) {
             .starts_with(['!', '&'])
         {
             let mut matched: bool = false;
+            let mut prefix_len = 1;
+            let mut symbol = file.tokens[file.working_index].contents.clone();
+            symbol = symbol.trim().to_string();
 
-            for m in &MACRO_LIST {
-                let symbol = file.tokens[file.working_index].contents.trim();
-                if symbol.len() < 2
+            if symbol.len() > 2 {
+                let mut ephemeral = false;
+                let same_file = file.tokens[file.working_index].origin_file != file.filename_input;
+
+                //if file.tokens[file.working_index].contents.starts_with("!&")
+                if symbol.starts_with("!&")
                 {
-                    continue;
+                    prefix_len = 2;
+                    ephemeral = !same_file;
                 }
-                if &symbol[1..] == m.symbol {
-                    matched = true;
-                    println!("Found a macro ({})", m.symbol);
-                    let mut ephemeral = false;
-                    if file.tokens[file.working_index].contents.starts_with('&')
-                        && file.tokens[file.working_index].origin_file != file.filename_input
-                    {
-                        println!("Skipping Ephermal macro from included file.");
-                        ephemeral = true;
-                    }
+                //else if file.tokens[file.working_index].contents.starts_with("&") 
+                else if symbol.starts_with("&")
+                {
+                    ephemeral = same_file;
+                }
 
-                    let (args, tokcount) = collect_arguments(&file.tokens[file.working_index..]);
-                    let expansion: Vec<Token>;
-                    if ephemeral {
-                        expansion = Vec::new();
-                    } else {
-                        expansion = (m.expand)(file, &args);
+                // Check if its a macro
+                for m in &MACRO_LIST {
+                    if &symbol[prefix_len..] == m.symbol {
+                        matched = true;
+                        println!("Found a macro ({})", m.symbol);
+
+                        let (args, tokcount) =
+                            collect_arguments(&file.tokens[file.working_index..]);
+                        let expansion: Vec<Token>;
+                        if ephemeral {
+                            expansion = Vec::new();
+                        } else {
+                            expansion = (m.expand)(file, &args);
+                        }
+                        file.tokens.remove(file.working_index);
+                        file.tokens.splice(
+                            file.working_index..(file.working_index + tokcount - 1),
+                            expansion,
+                        );
                     }
-                    file.tokens.remove(file.working_index);
-                    file.tokens.splice(
-                        file.working_index..(file.working_index + tokcount - 1),
-                        expansion,
-                    );
                 }
+                // Check if its a block
+                // for b in  &BLOCK_LIST {}}
             }
-
-            // for b in  &BLOCK_LIST {}
-
             if !matched {
                 println!(
                     "Token written as a function but no such function exists \"{}\"",
