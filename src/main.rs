@@ -58,15 +58,13 @@ fn process_file(file: &mut InputFile) {
                 let mut ephemeral = false;
                 let same_file = file.tokens[file.working_index].origin_file != file.filename_input;
 
-                //if file.tokens[file.working_index].contents.starts_with("!&")
-                if symbol.starts_with("!&")
-                {
+                // Inversely Ephemeral
+                if symbol.starts_with("!&") {
                     prefix_len = 2;
                     ephemeral = !same_file;
                 }
-                //else if file.tokens[file.working_index].contents.starts_with("&") 
-                else if symbol.starts_with("&")
-                {
+                // Ephemeral
+                else if symbol.starts_with("&") {
                     ephemeral = same_file;
                 }
 
