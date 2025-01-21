@@ -1,17 +1,20 @@
 use core::fmt;
-use std::{fmt::Arguments, ops::Index, process::exit, thread::sleep};
+use std::{
+    ascii::escape_default, f32::consts::E, fmt::Arguments, ops::Index, process::exit, thread::sleep,
+};
 
 use super::DELIMITERS;
 use crate::types::Token;
 
 pub fn collect_arguments(tokens: &[Token]) -> (Vec<String>, usize) {
+    // Arguments vec and number of tokens consumed
     //let mut output = Vec::new();
-    let mut split_tokens = Vec::new();
-    for tok in tokens {
-        for s in split_keep_delimiters(tok.contents.clone()) {
-            split_tokens.push(s);
-        }
-    }
+    // let mut split_tokens = Vec::new();
+    // for tok in tokens {
+    //     for s in split_keep_delimiters(tok.contents.clone()) {
+    //         split_tokens.push(s);
+    //     }
+    //}
 
     let mut quoted: bool = false;
     let mut entered: bool = false;
@@ -20,13 +23,14 @@ pub fn collect_arguments(tokens: &[Token]) -> (Vec<String>, usize) {
 
     let mut in_token_count = 0;
 
-    for tok in split_tokens {
-        in_token_count += 1;
-        if tok.starts_with([' ', '\t']) && !quoted {
+    for tok in tokens {
+        in_token_count += 1; // This could be a problem if it something got split above..
+        let contents = &tok.contents;
+        if contents.starts_with([' ', '\t']) && !quoted {
             continue;
         }
 
-        if !entered && tok.starts_with('(') {
+        if !entered && contents.starts_with('(') {
             entered = true;
             continue;
         }
@@ -35,13 +39,13 @@ pub fn collect_arguments(tokens: &[Token]) -> (Vec<String>, usize) {
             continue;
         }
 
-        if !quoted && tok.starts_with(')') {
+        if !quoted && contents.starts_with(')') {
             break;
         }
 
         let mut i = 0;
-        while i < tok.len() {
-            let c = tok.chars().nth(i).unwrap();
+        while i < contents.len() {
+            let c = contents.chars().nth(i).unwrap();
             i += 1;
 
             if c == '\"' {
@@ -59,6 +63,90 @@ pub fn collect_arguments(tokens: &[Token]) -> (Vec<String>, usize) {
     }
 
     return (args, in_token_count);
+}
+
+pub fn collect_block(tokens: &[Token]) -> (Vec<Token>, usize) {
+    let mut entered = false;
+    let mut tokens_consumed: usize = 0;
+    let mut entering_bracket_count = 0;
+    let mut exiting_bracket_count = 0;
+    let mut scope_count = 0; //incremented by '{{{', decremented by '}}}'
+    let mut escaped = false;
+
+    let mut block: Vec<Token> = Vec::new();
+
+    // We dont really care about doing anything that in the block right now
+    // maybe have the Token struct contain scope level later?
+    for tok in tokens {
+        tokens_consumed += 1;
+
+        println!(
+            "Collecting: \"{}\" is brak: {}",
+            tok.contents,
+            tok.contents == "{"
+        );
+        // println!(
+        //     "ebrack: {}, scope: {}, entered: {}, escaped: {}",
+        //     entering_bracket_count, scope_count, entered, escaped
+        //);
+        if !entered {
+            if tok.contents.is_only_whitespace() {
+                continue;
+            }
+            if tok.contents != "{"
+            // Expected block start, got garbage
+            {
+                println!("Expected \'{{{{{{\' got \'{}\'", tok.contents);
+                return (Vec::new(), 0);
+            }
+        }
+
+        if escaped {
+            escaped = false;
+            entering_bracket_count = 0;
+            exiting_bracket_count = 0;
+            block.push(tok.clone());
+            continue;
+        }
+
+        // Scope Start
+
+        if tok.contents == "{" {
+            entering_bracket_count += 1;
+        } else {
+            entering_bracket_count = 0;
+        }
+        // Scope End
+        if tok.contents == "}" {
+            exiting_bracket_count += 1;
+            if exiting_bracket_count == 3 {
+                scope_count -= 1;
+                exiting_bracket_count = 0;
+                if scope_count == 0 {
+                    //pop the last 2 brackets off and return
+                    block.pop();
+                    block.pop();
+                    break;
+                }
+            }
+        } else {
+            exiting_bracket_count = 0;
+        }
+        if tok.contents == "\\" {
+            escaped = true;
+        } else {
+            if entered {
+                block.push(tok.clone());
+            }
+        }
+        if entering_bracket_count == 3 {
+            scope_count += 1;
+            entering_bracket_count = 0;
+
+            entered = true;
+        }
+    }
+    return (block, tokens_consumed);
 }
 
 // Theres no std function to have the delimiters be their own element in the out vector
@@ -100,6 +188,7 @@ pub fn strings_to_tokens(in_strings: Vec<String>, origin_file: String) -> Vec<To
 }
 
 // Need to do some special case stuff so you can macros without spaces between
+// (something like "stuff!insert(..)" is split to ["stuff","!insert(..)"] so it can be acted on later)
 pub fn split_to_tokens(instr: String, origin_file: String) -> Vec<Token> {
     let split = split_keep_delimiters(instr);
     let mut new_split: Vec<String> = Vec::new();
@@ -118,27 +207,41 @@ pub fn split_to_tokens(instr: String, origin_file: String) -> Vec<Token> {
     return strings_to_tokens(new_split, origin_file);
 }
 
-pub fn next_nonwhitespace_token(tokens: &Vec<Token>, index: usize) -> (bool, usize) {
-    while index < tokens.len() {
-        if tokens[index].contents.starts_with([' ', '\t', '\n']) {
-            continue;
+pub fn trim_whitespace_tokens(tokens: &[Token]) -> &[Token] {
+    let mut start: usize = 0;
+    let mut end: usize = tokens.len();
+    for tok in tokens {
+        if !tok.contents.is_only_whitespace() {
+            break;
         }
-        return (true, index);
+        start += 1;
     }
-    return (false, 0);
+
+    for tok in tokens.iter().rev() {
+        if !tok.contents.is_only_whitespace() {
+            break;
+        }
+        end -= 1;
+    }
+
+    if start < end {
+        return &tokens[start..end];
+    } else {
+        return &[];
+    }
 }
 
-pub trait IsDelimiter {
-    fn is_delimiter(&self) -> bool;
+pub trait OnlyWhitespace {
+    fn is_only_whitespace(&self) -> bool;
 }
 
-impl IsDelimiter for char {
-    fn is_delimiter(&self) -> bool {
-        for d in DELIMITERS {
-            if *self == d {
-                return true;
+impl OnlyWhitespace for String {
+    fn is_only_whitespace(&self) -> bool {
+        for c in self.chars() {
+            if !c.is_whitespace() {
+                return false;
             }
         }
-        return false;
+        return true;
     }
 }

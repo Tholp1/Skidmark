@@ -2,7 +2,7 @@ use std::sync::Mutex;
 
 pub struct Token {
     pub contents: String,
-    pub origin_file: String,
+    pub origin_file: String, //TODO: make this an index so we dont have the same string in memory for every single word
     pub line_number: u32,
 }
 
@@ -28,11 +28,11 @@ pub struct InputFile {
     pub block_edges: Vec<BlockEdge>,
 }
 
-type MacroExpansion = fn(&mut InputFile, &Vec<String>) -> Vec<Token>;
+type MacroExpansion = fn(&mut InputFile, &Vec<String>, &[Token]) -> Vec<Token>;
 pub struct Macro<'a> {
     pub symbol: &'a str,
     pub expand: MacroExpansion,
-    //pub always_ephemeral: bool, // This wont be included from other files
+    pub has_scope: bool, //takes blocks of text input as well as parameters using {{...}}
 }
 
 impl InputFile {
@@ -61,5 +61,15 @@ impl Token {
 impl ToString for Token {
     fn to_string(&self) -> String {
         return self.contents.clone();
+    }
+}
+
+impl Clone for Token {
+    fn clone(&self) -> Self {
+        return Token::new(
+            self.contents.clone(),
+            self.origin_file.clone(),
+            self.line_number,
+        );
     }
 }
