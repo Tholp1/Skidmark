@@ -1,17 +1,17 @@
 pub mod clear;
-pub mod include;
+pub mod insert;
 pub mod simple_blocks;
 use super::types::Macro;
 
 use clear::macro_clear;
-use include::macro_include;
+use insert::macro_insert;
 use simple_blocks::{macro_comment, macro_repeat};
 
 pub static MACRO_LIST: [Macro<'_>; 4] = [
     // Unscoped
     Macro {
-        symbol: "include", // Inserts another file
-        expand: macro_include,
+        symbol: "insert", // Inserts another file
+        expand: macro_insert,
         has_scope: false,
     },
     Macro {
