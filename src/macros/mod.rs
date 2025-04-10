@@ -26,8 +26,8 @@ pub static MACRO_LIST: [Macro<'_>; 4] = [
         has_scope: true,
     },
     Macro {
-        symbol: "repeat",   // Outputs what its give x number of times
+        symbol: "repeat", // Outputs what its give x number of times
         expand: macro_repeat,
-        has_scope: true
-    }
+        has_scope: true,
+    },
 ];

@@ -1,9 +1,11 @@
 mod macros;
+mod projectparse;
 mod stringtools;
 mod types;
 
 use macros::MACRO_LIST;
 use markdown::{to_html_with_options, CompileOptions, Options};
+use projectparse::{parse_project, FileIndexing, ProjectContext};
 use std::{
     env,
     fs::{self, File},
@@ -19,29 +21,21 @@ use types::{InputFile, Macro, Token};
 static DELIMITERS: [char; 10] = [' ', '\n', '\t', '(', ')', '{', '}', '\\', '\'', '\"'];
 
 fn main() {
-    let mut files: Vec<types::InputFile> = Vec::new();
-    let mut args: Vec<String> = env::args().collect();
-    args.remove(0);
-
-    for file in args.iter() {
-        let mut new_file = types::InputFile::new();
-        new_file.filename_input = file.to_string();
-        new_file.filename_skidout = file.to_string() + ".skidout";
-        new_file.filename_htmlout = file.to_string() + ".html";
-        files.push(new_file);
-    }
-    println!("{:?}", args);
-    for f in &mut files {
-        process_file(f);
+    let mut project = parse_project(env::current_dir().unwrap().as_path());
+    for group in &mut project.filegroups {
+        for infile in &mut group.files {
+            process_file(infile, &mut project.context);
+        }
     }
 }
 
-fn process_file(file: &mut InputFile) {
-    let contents = fs::read_to_string(&file.filename_input).expect("File unreadable or missing");
+fn process_file(file: &mut InputFile, context: &mut ProjectContext) {
+    //}, context: &mut ProjectContext) {
+    let contents = fs::read_to_string(&file.file_input).expect("File unreadable or missing");
     //println!("{}\n {}", f.filename_out, contents);
 
     //file.tokens = strings_to_tokens(split_keep_delimiters(contents), file.filename_input.clone());
-    file.tokens = split_to_tokens(contents, file.filename_input.clone());
+    file.tokens = split_to_tokens(contents, context.index_of_file(&file.file_input));
     //let mut escaped = false;
 
     while file.working_index < file.tokens.len() {
@@ -64,7 +58,8 @@ fn process_file(file: &mut InputFile) {
 
             if symbol.len() > 2 {
                 let mut ephemeral = false;
-                let same_file = file.tokens[file.working_index].origin_file != file.filename_input;
+                let same_file = file.tokens[file.working_index].origin_file
+                    != context.index_of_file(&file.file_input);
 
                 // Inversely Ephemeral
                 if symbol.starts_with("!&") {
@@ -96,10 +91,10 @@ fn process_file(file: &mut InputFile) {
                                     &file.tokens[(file.working_index + args_tokcount)..],
                                 );
                                 println!("{}", block_tokcount);
-                                expansion = (m.expand)(file, &args, &block[..]);
+                                expansion = (m.expand)(file, context, &args, &block[..]);
                             } else {
                                 block_tokcount = 0;
-                                expansion = (m.expand)(file, &args, &Vec::new()[..]);
+                                expansion = (m.expand)(file, context, &args, &Vec::new()[..]);
                             }
                         }
 
@@ -135,7 +130,7 @@ fn process_file(file: &mut InputFile) {
     for t in &file.tokens {
         skid_output += &t.contents;
     }
-    fs::write(&file.filename_skidout, &skid_output).expect("Couldn't write skid to file");
+    fs::write(&file.file_skidout, &skid_output).expect("Couldn't write skid to file");
 
     //let html_output = markdown::to_html(&skid_output);
     let html_output = markdown::to_html_with_options(
@@ -150,6 +145,11 @@ fn process_file(file: &mut InputFile) {
         },
     )
     .unwrap();
-    fs::write(&file.filename_htmlout, &html_output).expect("Couldn't write html to file");
-    println!("{} written.", file.filename_htmlout);
+    fs::write(&file.file_htmlout, &html_output).expect("Couldn't write html to file");
+    println!(
+        "{} written.",
+        file.file_htmlout
+            .to_str()
+            .unwrap_or("Couldnt Unwrap htmlout name")
+    );
 }

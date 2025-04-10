@@ -1,34 +1,22 @@
-use std::sync::Mutex;
+use std::path::PathBuf;
+
+use crate::projectparse::ProjectContext;
 
 pub struct Token {
     pub contents: String,
-    pub origin_file: String, //TODO: make this an index so we dont have the same string in memory for every single word
+    pub origin_file: usize,
     pub line_number: u32,
 }
 
-pub enum BlockEdgeType {
-    FileStart,
-    FileEnd,
-    Start,
-    End,
-}
-
-// A 'Block' is what im calling the enclosed scope of a macro
-pub struct BlockEdge {
-    pub edge_type: BlockEdgeType,
-    pub tokens_to_next_edge: u64,
-}
-
 pub struct InputFile {
-    pub filename_input: String,
-    pub filename_skidout: String,
-    pub filename_htmlout: String,
+    pub file_input: PathBuf,
+    pub file_skidout: PathBuf,
+    pub file_htmlout: PathBuf,
     pub tokens: Vec<Token>,
     pub working_index: usize,
-    pub block_edges: Vec<BlockEdge>,
 }
 
-type MacroExpansion = fn(&mut InputFile, &Vec<String>, &[Token]) -> Vec<Token>;
+type MacroExpansion = fn(&mut InputFile, &mut ProjectContext, &Vec<String>, &[Token]) -> Vec<Token>;
 pub struct Macro<'a> {
     pub symbol: &'a str,
     pub expand: MacroExpansion,
@@ -38,18 +26,17 @@ pub struct Macro<'a> {
 impl InputFile {
     pub fn new() -> InputFile {
         InputFile {
-            filename_input: "".to_string(),
-            filename_skidout: "".to_string(),
-            filename_htmlout: "".to_string(),
+            file_input: "".into(),
+            file_skidout: "".into(),
+            file_htmlout: "".into(),
             tokens: Vec::new(),
             working_index: 0,
-            block_edges: Vec::new(),
         }
     }
 }
 
 impl Token {
-    pub fn new(contents: String, origin_file: String, line_number: u32) -> Token {
+    pub fn new(contents: String, origin_file: usize, line_number: u32) -> Token {
         Token {
             contents: contents,
             origin_file: origin_file,

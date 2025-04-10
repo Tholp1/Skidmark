@@ -1,11 +1,17 @@
-use std::{env::Args, fs};
+use std::{env::Args, fs, path::PathBuf};
 
 use crate::{
+    projectparse::{FileIndexing, ProjectContext},
     stringtools::{split_keep_delimiters, strings_to_tokens},
     types::{InputFile, Token},
 };
 
-pub fn macro_insert(_file: &mut InputFile, args: &Vec<String>, _scope: &[Token]) -> Vec<Token> {
+pub fn macro_insert(
+    _file: &mut InputFile,
+    _context: &mut ProjectContext,
+    args: &Vec<String>,
+    _scope: &[Token],
+) -> Vec<Token> {
     print!("\nargs: {:?}\n", args);
     let mut output = fs::read_to_string(args[0].clone()).expect("File unreadable or missing");
     if output.ends_with("\n") {
@@ -13,5 +19,8 @@ pub fn macro_insert(_file: &mut InputFile, args: &Vec<String>, _scope: &[Token])
     } //remove trailing newline
 
     let split_output = split_keep_delimiters(output);
-    return strings_to_tokens(split_output, args[0].clone());
+    return strings_to_tokens(
+        split_output,
+        _context.index_of_file(&PathBuf::from(&args[0])),
+    );
 }
