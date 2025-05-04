@@ -10,6 +10,7 @@ use std::{
     env,
     fs::{self, File},
     io::Write,
+    path::PathBuf,
     process::{exit, Output},
 };
 use stringtools::{
@@ -21,7 +22,32 @@ use types::{InputFile, Macro, Token};
 static DELIMITERS: [char; 10] = [' ', '\n', '\t', '(', ')', '{', '}', '\\', '\'', '\"'];
 
 fn main() {
-    let mut project = parse_project(env::current_dir().unwrap().as_path());
+    let mut project_folder = PathBuf::from(env::current_dir().unwrap().as_path());
+
+    let mut project_path = project_folder.clone();
+    project_path.push("skidmark.toml");
+
+    while !project_path.exists() || project_path.is_dir() {
+        let ok = project_folder.pop();
+        if !ok {
+            println!("No skidmark.toml project file found in this folder or ancestors.");
+            exit(1);
+        }
+        project_path = project_folder.clone();
+        project_path.push("skidmark.toml");
+    }
+    println!("Operatting with {:?}", &project_path.as_os_str());
+    assert!(env::set_current_dir(&project_folder).is_ok());
+
+    let mut project = parse_project(&project_path);
+
+    let mut num = 0;
+
+    for group in &project.filegroups {
+        num = num + group.files.len();
+    }
+
+    println!("Proccesing {} files.", num);
     for group in &mut project.filegroups {
         for infile in &mut group.files {
             process_file(infile, &mut project.context);

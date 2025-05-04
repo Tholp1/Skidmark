@@ -32,6 +32,7 @@ pub struct ProjectSettings {
 
 pub struct ProjectContext {
     pub filemap: Vec<PathBuf>, // mapped to index
+                               //variables later
 }
 
 macro_rules! get_table_bool_or_default {
@@ -147,9 +148,19 @@ pub fn parse_project(tomlpath: &Path) -> Project {
                 let mut new_file = crate::types::InputFile::new();
                 new_file.file_input = project.settings.input_folder.clone();
                 new_file.file_input.push(filename);
+
+                new_file.file_htmlout = project.settings.output_folder.clone();
+                new_file.file_htmlout.push(filename);
+                new_file.file_htmlout.set_extension("html");
+
+                new_file.file_skidout = new_file.file_htmlout.clone();
+                new_file.file_skidout.set_extension("sko");
+
                 group.files.push(new_file);
             }
         }
+
+        project.filegroups.push(group);
     }
 
     return project;
