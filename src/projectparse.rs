@@ -11,7 +11,7 @@ use toml::{ser, Table};
 
 pub struct Project {
     pub filegroups: Vec<FileGroup>,
-    pub settings: ProjectSettings,
+    //pub settings: ProjectSettings,
     pub context: ProjectContext,
 }
 
@@ -23,15 +23,18 @@ pub struct FileGroup {
     pub process: bool,
 }
 
-pub struct ProjectSettings {
+// pub struct ProjectSettings {
+
+// }
+
+pub struct ProjectContext {
     pub input_folder: PathBuf,
     pub output_folder: PathBuf,
     pub global_pre_insert: PathBuf,
     pub global_post_insert: PathBuf,
-}
 
-pub struct ProjectContext {
     pub filemap: Vec<PathBuf>, // mapped to index
+
                                //variables later
 }
 
@@ -65,13 +68,11 @@ pub fn parse_project(tomlpath: &Path) -> Project {
 
     let mut project: Project = Project {
         filegroups: Vec::new(),
-        settings: ProjectSettings {
+        context: ProjectContext {
             input_folder: PathBuf::new(),
             output_folder: PathBuf::new(),
             global_pre_insert: PathBuf::new(),
             global_post_insert: PathBuf::new(),
-        },
-        context: ProjectContext {
             filemap: Vec::new(),
         },
     };
@@ -89,24 +90,24 @@ pub fn parse_project(tomlpath: &Path) -> Project {
         .parent()
         .expect("Project file unreadable or missing.");
 
-    project.settings.input_folder = PathBuf::from(get_table_string_or_default!(
+    project.context.input_folder = PathBuf::from(get_table_string_or_default!(
         settings_section,
         "inputFolder",
         "skid"
     ));
 
-    project.settings.output_folder = PathBuf::from(get_table_string_or_default!(
+    project.context.output_folder = PathBuf::from(get_table_string_or_default!(
         settings_section,
         "outputFolder",
         "content"
     ));
 
-    project.settings.global_pre_insert = project_root.join(get_table_string_or_default!(
+    project.context.global_pre_insert = project_root.join(get_table_string_or_default!(
         settings_section,
         "preInsertGlobal",
         ""
     ));
-    project.settings.global_post_insert = project_root.join(get_table_string_or_default!(
+    project.context.global_post_insert = project_root.join(get_table_string_or_default!(
         settings_section,
         "postInsertGlobal",
         ""
@@ -146,10 +147,10 @@ pub fn parse_project(tomlpath: &Path) -> Project {
                     )
                 });
                 let mut new_file = crate::types::InputFile::new();
-                new_file.file_input = project.settings.input_folder.clone();
+                new_file.file_input = project.context.input_folder.clone();
                 new_file.file_input.push(filename);
 
-                new_file.file_htmlout = project.settings.output_folder.clone();
+                new_file.file_htmlout = project.context.output_folder.clone();
                 new_file.file_htmlout.push(filename);
                 new_file.file_htmlout.set_extension("html");
 
@@ -182,7 +183,7 @@ impl FileIndexing for ProjectContext {
             index = index + 1;
         }
         self.filemap.push(cannonical);
-        self.filemap.len()
+        return self.filemap.len() - 1;
     }
 
     fn file_for_index(&self, i: usize) -> Option<&PathBuf> {

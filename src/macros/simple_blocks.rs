@@ -5,6 +5,7 @@ use crate::{
 
 pub fn macro_comment(
     _file: &mut InputFile,
+    _origin_index: usize,
     _context: &mut ProjectContext,
     _args: &Vec<String>,
     _scope: &[Token],
@@ -14,6 +15,7 @@ pub fn macro_comment(
 
 pub fn macro_null(
     _file: &mut InputFile,
+    _origin_index: usize,
     _context: &mut ProjectContext,
     _args: &Vec<String>,
     scope: &[Token],
@@ -27,6 +29,7 @@ pub fn macro_null(
 
 pub fn macro_repeat(
     _file: &mut InputFile,
+    _origin_index: usize,
     _context: &mut ProjectContext,
     args: &Vec<String>,
     scope: &[Token],

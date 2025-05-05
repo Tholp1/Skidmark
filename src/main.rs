@@ -19,7 +19,7 @@ use stringtools::{
 };
 use types::{InputFile, Macro, Token};
 
-static DELIMITERS: [char; 10] = [' ', '\n', '\t', '(', ')', '{', '}', '\\', '\'', '\"'];
+static DELIMITERS: [char; 12] = [' ', '\n', '\t', '(', ')', '{', '}', '[', ']', '\\', '\'', '\"'];
 
 fn main() {
     let mut project_folder = PathBuf::from(env::current_dir().unwrap().as_path());
@@ -117,10 +117,22 @@ fn process_file(file: &mut InputFile, context: &mut ProjectContext) {
                                     &file.tokens[(file.working_index + args_tokcount)..],
                                 );
                                 println!("{}", block_tokcount);
-                                expansion = (m.expand)(file, context, &args, &block[..]);
+                                expansion = (m.expand)(
+                                    file,
+                                    file.tokens[file.working_index].origin_file,
+                                    context,
+                                    &args,
+                                    &block[..],
+                                );
                             } else {
                                 block_tokcount = 0;
-                                expansion = (m.expand)(file, context, &args, &Vec::new()[..]);
+                                expansion = (m.expand)(
+                                    file,
+                                    file.tokens[file.working_index].origin_file,
+                                    context,
+                                    &args,
+                                    &Vec::new()[..],
+                                );
                             }
                         }
 

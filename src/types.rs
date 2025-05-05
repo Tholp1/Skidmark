@@ -16,7 +16,8 @@ pub struct InputFile {
     pub working_index: usize,
 }
 
-type MacroExpansion = fn(&mut InputFile, &mut ProjectContext, &Vec<String>, &[Token]) -> Vec<Token>;
+type MacroExpansion =
+    fn(&mut InputFile, usize, &mut ProjectContext, &Vec<String>, &[Token]) -> Vec<Token>;
 pub struct Macro<'a> {
     pub symbol: &'a str,
     pub expand: MacroExpansion,

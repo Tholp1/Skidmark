@@ -207,10 +207,10 @@ pub fn trim_whitespace_tokens(tokens: &[Token]) -> &[Token] {
     }
 
     for tok in tokens.iter().rev() {
-        end = end - 1;
         if !tok.contents.is_only_whitespace() {
             break;
         }
+        end = end - 1;
     }
 
     return &tokens[start..end];

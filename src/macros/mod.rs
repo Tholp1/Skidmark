@@ -5,9 +5,9 @@ use super::types::Macro;
 
 use clear::macro_clear;
 use insert::macro_insert;
-use simple_blocks::{macro_comment, macro_repeat};
+use simple_blocks::{macro_comment, macro_null, macro_repeat};
 
-pub static MACRO_LIST: [Macro<'_>; 4] = [
+pub static MACRO_LIST: [Macro<'_>; 5] = [
     // Unscoped
     Macro {
         symbol: "insert", // Inserts another file
@@ -28,6 +28,11 @@ pub static MACRO_LIST: [Macro<'_>; 4] = [
     Macro {
         symbol: "repeat", // Outputs what its give x number of times
         expand: macro_repeat,
+        has_scope: true,
+    },
+    Macro {
+        symbol: "preformatted",
+        expand: macro_null,
         has_scope: true,
     },
 ];
