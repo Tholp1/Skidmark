@@ -36,8 +36,7 @@ pub fn macro_insert(
     let mut search_from_root = arg.starts_with("//");
     let mut ok = false;
 
-    if search_from_root
-    {
+    if search_from_root {
         arg.drain(0..2); //remove "//"
     }
 

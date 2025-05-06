@@ -174,7 +174,7 @@ pub trait FileIndexing {
 
 impl FileIndexing for ProjectContext {
     fn index_of_file(&mut self, f: &PathBuf) -> usize {
-        let mut cannonical = f.canonicalize().unwrap();
+        let cannonical = f.canonicalize().unwrap();
         let mut index = 0;
         for p in &self.filemap {
             if cannonical == *p {

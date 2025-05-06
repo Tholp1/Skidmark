@@ -1,5 +1,5 @@
 use core::fmt;
-use std::{ascii::escape_default, fmt::Arguments, ops::Index, process::exit, thread::sleep};
+use std::{ascii::escape_default, error, fmt::Arguments, ops::Index, process::exit, thread::sleep};
 
 use super::DELIMITERS;
 use crate::types::Token;
@@ -83,6 +83,12 @@ pub fn collect_block(tokens: &[Token]) -> (Vec<Token>, usize) {
             if tok.contents != "{"
             // Expected block start, got garbage
             {
+                // println!("Expected block start, got {}",tok.contents);
+                // for t in &block
+                // {
+                //     print!("{} ", t.contents);
+                // }
+                // exit(1);
                 return (Vec::new(), 0);
             }
         }
@@ -115,8 +121,11 @@ pub fn collect_block(tokens: &[Token]) -> (Vec<Token>, usize) {
                 scope_count -= 1;
                 entering_bracket_count = 0;
             }
+            if scope_count == 0 {
+                break;
+            }
         } else {
-            entering_bracket_count = 0;
+            exiting_bracket_count = 0;
         }
         if tok.contents == "\\" {
             escaped = true;

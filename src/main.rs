@@ -4,7 +4,7 @@ mod stringtools;
 mod types;
 
 use macros::MACRO_LIST;
-use markdown::{to_html_with_options, CompileOptions, Options};
+use markdown::{to_html_with_options, CompileOptions, Options, ParseOptions};
 use projectparse::{parse_project, FileIndexing, ProjectContext};
 use std::{
     env,
@@ -19,7 +19,9 @@ use stringtools::{
 };
 use types::{InputFile, Macro, Token};
 
-static DELIMITERS: [char; 12] = [' ', '\n', '\t', '(', ')', '{', '}', '[', ']', '\\', '\'', '\"'];
+static DELIMITERS: [char; 12] = [
+    ' ', '\n', '\t', '(', ')', '{', '}', '[', ']', '\\', '\'', '\"',
+];
 
 fn main() {
     let mut project_folder = PathBuf::from(env::current_dir().unwrap().as_path());
@@ -66,7 +68,7 @@ fn process_file(file: &mut InputFile, context: &mut ProjectContext) {
 
     while file.working_index < file.tokens.len() {
         //look for macros or blocks
-        println!(">\"{}\"<", file.tokens[file.working_index].contents);
+        //println!(">\"{}\"<", file.tokens[file.working_index].contents);
 
         if file.tokens[file.working_index].contents == "\\" {
             file.working_index += 2;
@@ -107,25 +109,30 @@ fn process_file(file: &mut InputFile, context: &mut ProjectContext) {
                             collect_arguments(&file.tokens[file.working_index..]);
                         let expansion: Vec<Token>;
                         let block_tokcount: usize;
-                        if ephemeral {
-                            expansion = Vec::new();
-                            block_tokcount = 0;
-                        } else {
-                            if m.has_scope {
-                                let block: Vec<Token>;
-                                (block, block_tokcount) = collect_block(
-                                    &file.tokens[(file.working_index + args_tokcount)..],
-                                );
-                                println!("{}", block_tokcount);
+
+                        if m.has_scope {
+                            println!("is scoped.");
+                            let block: Vec<Token>;
+                            (block, block_tokcount) =
+                                collect_block(&file.tokens[(file.working_index + args_tokcount)..]);
+
+                            if ephemeral {
+                                expansion = Vec::new();
+                            } else {
                                 expansion = (m.expand)(
                                     file,
                                     file.tokens[file.working_index].origin_file,
                                     context,
                                     &args,
-                                    &block[..],
+                                    &block[3..block.len() - 3],
                                 );
+                            }
+                        } else {
+                            block_tokcount = 0;
+
+                            if ephemeral {
+                                expansion = Vec::new();
                             } else {
-                                block_tokcount = 0;
                                 expansion = (m.expand)(
                                     file,
                                     file.tokens[file.working_index].origin_file,
@@ -177,9 +184,13 @@ fn process_file(file: &mut InputFile, context: &mut ProjectContext) {
             compile: CompileOptions {
                 allow_dangerous_html: true,
                 allow_dangerous_protocol: true,
+                gfm_tagfilter: false,
+                // gfm_footnote_clobber_prefix:
+                gfm_task_list_item_checkable: true,
+                allow_any_img_src: true,
                 ..CompileOptions::gfm()
             },
-            ..Options::gfm()
+            ..Options::default()
         },
     )
     .unwrap();

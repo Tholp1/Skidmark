@@ -1,13 +1,15 @@
 pub mod clear;
 pub mod insert;
 pub mod simple_blocks;
+pub mod template;
 use super::types::Macro;
 
 use clear::macro_clear;
 use insert::macro_insert;
 use simple_blocks::{macro_comment, macro_null, macro_repeat};
+use template::macro_template;
 
-pub static MACRO_LIST: [Macro<'_>; 5] = [
+pub static MACRO_LIST: [Macro<'_>; 6] = [
     // Unscoped
     Macro {
         symbol: "insert", // Inserts another file
@@ -31,8 +33,13 @@ pub static MACRO_LIST: [Macro<'_>; 5] = [
         has_scope: true,
     },
     Macro {
-        symbol: "preformatted",
+        symbol: "section",
         expand: macro_null,
+        has_scope: true,
+    },
+    Macro {
+        symbol: "template",
+        expand: macro_template,
         has_scope: true,
     },
 ];
