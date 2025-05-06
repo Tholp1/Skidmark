@@ -7,6 +7,7 @@ use crate::{
 pub fn macro_clear(
     _file: &mut InputFile,
     _origin_index: usize,
+    _origin_line: usize,
     _context: &mut ProjectContext,
     _args: &Vec<String>,
     _scope: &[Token],

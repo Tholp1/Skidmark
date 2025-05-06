@@ -122,9 +122,10 @@ fn process_file(file: &mut InputFile, context: &mut ProjectContext) {
                                 expansion = (m.expand)(
                                     file,
                                     file.tokens[file.working_index].origin_file,
+                                    file.tokens[file.working_index].line_number,
                                     context,
                                     &args,
-                                    &block[3..block.len() - 3],
+                                    &block,
                                 );
                             }
                         } else {
@@ -136,6 +137,7 @@ fn process_file(file: &mut InputFile, context: &mut ProjectContext) {
                                 expansion = (m.expand)(
                                     file,
                                     file.tokens[file.working_index].origin_file,
+                                    file.tokens[file.working_index].line_number,
                                     context,
                                     &args,
                                     &Vec::new()[..],
@@ -156,8 +158,67 @@ fn process_file(file: &mut InputFile, context: &mut ProjectContext) {
                         }
                     }
                 }
-                // Check if its a block
-                // for b in  &BLOCK_LIST {}}
+
+                // Make this less copied
+                // check for templates
+                for m in &mut file.templates {
+                    if &symbol[prefix_len..] == m.symbol {
+                        matched_macro = true;
+                        println!("Found a macro ({})", m.symbol);
+
+                        let (args, args_tokcount) =
+                            collect_arguments(&file.tokens[file.working_index..]);
+                        let expansion: Vec<Token>;
+                        let block_tokcount: usize;
+
+                        if m.has_scope {
+                            println!("is scoped.");
+                            let block: Vec<Token>;
+                            (block, block_tokcount) =
+                                collect_block(&file.tokens[(file.working_index + args_tokcount)..]);
+
+                            if ephemeral {
+                                expansion = Vec::new();
+                            } else {
+                                expansion = m.expand(
+                                    //file,
+                                    file.tokens[file.working_index].origin_file,
+                                    //file.tokens[file.working_index].line_number,
+                                    context,
+                                    &args,
+                                    &block,
+                                );
+                            }
+                        } else {
+                            block_tokcount = 0;
+
+                            if ephemeral {
+                                expansion = Vec::new();
+                            } else {
+                                expansion = m.expand(
+                                    //file,
+                                    file.tokens[file.working_index].origin_file,
+                                    //file.tokens[file.working_index].line_number,
+                                    context,
+                                    &args,
+                                    &Vec::new()[..],
+                                );
+                            }
+                        }
+
+                        let trimmed = trim_whitespace_tokens(&expansion);
+
+                        file.tokens.remove(file.working_index);
+                        file.tokens.splice(
+                            file.working_index
+                                ..(file.working_index + args_tokcount + block_tokcount - 1),
+                            trimmed.iter().cloned(),
+                        );
+                        if expansion.len() == 0 && file.working_index > 0 {
+                            file.working_index -= 1;
+                        }
+                    }
+                }
             }
             if !matched_macro {
                 println!(
@@ -190,7 +251,7 @@ fn process_file(file: &mut InputFile, context: &mut ProjectContext) {
                 allow_any_img_src: true,
                 ..CompileOptions::gfm()
             },
-            ..Options::default()
+            ..Options::gfm()
         },
     )
     .unwrap();

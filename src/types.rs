@@ -1,11 +1,11 @@
 use std::path::PathBuf;
 
-use crate::projectparse::ProjectContext;
+use crate::{macros::template::SkidTemplate, projectparse::ProjectContext};
 
 pub struct Token {
     pub contents: String,
     pub origin_file: usize,
-    pub line_number: u32,
+    pub line_number: usize,
 }
 
 pub struct InputFile {
@@ -14,10 +14,20 @@ pub struct InputFile {
     pub file_htmlout: PathBuf,
     pub tokens: Vec<Token>,
     pub working_index: usize,
+    pub templates: Vec<SkidTemplate>,
 }
 
 type MacroExpansion =
-    fn(&mut InputFile, usize, &mut ProjectContext, &Vec<String>, &[Token]) -> Vec<Token>;
+    fn(&mut InputFile, usize, usize, &mut ProjectContext, &Vec<String>, &[Token]) -> Vec<Token>;
+// (
+//     _file: &mut InputFile,
+//     origin_index: usize,
+//     origin_line: usize,
+//     context: &mut ProjectContext,
+//     args: &Vec<String>,
+//     _scope: &[Token],
+// ) -> Vec<Token>
+
 pub struct Macro<'a> {
     pub symbol: &'a str,
     pub expand: MacroExpansion,
@@ -32,12 +42,13 @@ impl InputFile {
             file_htmlout: "".into(),
             tokens: Vec::new(),
             working_index: 0,
+            templates: Vec::new(),
         }
     }
 }
 
 impl Token {
-    pub fn new(contents: String, origin_file: usize, line_number: u32) -> Token {
+    pub fn new(contents: String, origin_file: usize, line_number: usize) -> Token {
         Token {
             contents: contents,
             origin_file: origin_file,

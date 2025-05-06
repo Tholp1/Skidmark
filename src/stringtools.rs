@@ -104,6 +104,7 @@ pub fn collect_block(tokens: &[Token]) -> (Vec<Token>, usize) {
         // Scope Start
         if tok.contents == "{" {
             entering_bracket_count += 1;
+
             if entering_bracket_count == 3 {
                 scope_count += 1;
                 entering_bracket_count = 0;
@@ -127,12 +128,28 @@ pub fn collect_block(tokens: &[Token]) -> (Vec<Token>, usize) {
         } else {
             exiting_bracket_count = 0;
         }
+
         if tok.contents == "\\" {
             escaped = true;
         } else {
             block.push(tok.clone());
         }
     }
+
+    // if block.len() == 6
+    // // things get ugly if its empty
+    // {
+    //     let mut emptyblock = Vec::new();
+    //     emptyblock.push(Token::new(
+    //         "".into(),
+    //         tokens[0].origin_file,
+    //         tokens[0].line_number,
+    //     ));
+    //     return (emptyblock, tokens_consumed);
+    // }
+    // pop brackets, bad and ugly but idgaf
+    block.drain(..3);
+    block.drain(block.len() - 3..);
     return (block, tokens_consumed);
 }
 
@@ -158,7 +175,7 @@ pub fn split_keep_delimiters(instr: String) -> Vec<String> {
 
 pub fn strings_to_tokens(in_strings: Vec<String>, origin_file: usize) -> Vec<Token> {
     let mut tokens = Vec::new();
-    let mut line_count: u32 = 1;
+    let mut line_count = 1;
 
     for str in in_strings {
         let current_line = line_count;
@@ -225,11 +242,37 @@ pub fn trim_whitespace_tokens(tokens: &[Token]) -> &[Token] {
     return &tokens[start..end];
 }
 
-pub trait OnlyWhitespace {
-    fn is_only_whitespace(&self) -> bool;
+pub fn find_pattern(tokens: &[Token], pat: String) -> Option<(usize, usize)> {
+    // (startpoint, length)
+    let split_pattern = split_to_tokens(pat, 0);
+    let mut pattern_index: usize = 0;
+    let mut token_index: usize = 0;
+    let mut working_pattern_index: usize = 0;
+
+    for t in tokens {
+        if t.contents == split_pattern[pattern_index].contents {
+            pattern_index += 1;
+        } else {
+            pattern_index = 0;
+            working_pattern_index = token_index + 1;
+        }
+
+        if pattern_index == split_pattern.len() {
+            return Some((working_pattern_index, split_pattern.len()));
+        }
+
+        token_index += 1;
+    }
+
+    None
 }
 
-impl OnlyWhitespace for String {
+pub trait WhitespaceChecks {
+    fn is_only_whitespace(&self) -> bool;
+    fn contains_whitespace(&self) -> bool;
+}
+
+impl WhitespaceChecks for String {
     fn is_only_whitespace(&self) -> bool {
         for c in self.chars() {
             if !c.is_whitespace() {
@@ -237,5 +280,14 @@ impl OnlyWhitespace for String {
             }
         }
         return true;
+    }
+
+    fn contains_whitespace(&self) -> bool {
+        for c in self.chars() {
+            if c.is_whitespace() {
+                return true;
+            }
+        }
+        return false;
     }
 }

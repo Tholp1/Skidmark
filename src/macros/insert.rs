@@ -14,18 +14,20 @@ use crate::{
 pub fn macro_insert(
     _file: &mut InputFile,
     _origin_index: usize,
+    origin_line: usize,
     _context: &mut ProjectContext,
     args: &Vec<String>,
     _scope: &[Token],
 ) -> Vec<Token> {
-    let mut origin_file = _context
+    let origin_file = _context
         .file_for_index(_origin_index)
         .expect("Macro 'Insert' was given a bad origin index")
         .clone();
     if args.len() != 1 {
         println!(
-            "\"{:?}\":Insert only accepts 1 argument, got given {} ({:?})",
+            "{:?}:{} ;Insert only accepts 1 argument, got given {} ({:?})",
             origin_file.to_str(),
+            origin_line,
             args.len(),
             args
         );
