@@ -40,17 +40,19 @@ impl SkidTemplate {
 
         let mut output = self.tokens.clone();
 
+        for tok in &mut output
+        {
+            tok.origin_file = origin_index;
+        }
+
         let mut args_index: usize = 0;
         for param in &self.args {
             let mut found_pattern = find_pattern(&output, format!("[[{}]]", param));
             while found_pattern.is_some() {
                 let (start, len) = found_pattern.unwrap();
                 let replacement = split_to_tokens(args[args_index].clone(), origin_index);
-                found_pattern = find_pattern(
-                    &output[start + replacement.len()..],
-                    format!("[[{}]]", param),
-                );
                 output.splice(start..start + len, replacement);
+                found_pattern = find_pattern(&output, format!("[[{}]]", param));
             }
             args_index += 1;
         }
@@ -59,8 +61,8 @@ impl SkidTemplate {
         while found_pattern.is_some() {
             let (start, len) = found_pattern.unwrap();
             let replacement = scope.to_vec();
-            found_pattern = find_pattern(&output[start + replacement.len()..], "[[{}]]".into());
             output.splice(start..start + len, replacement);
+            found_pattern = find_pattern(&output, "[[{}]]".into());
         }
 
         output
