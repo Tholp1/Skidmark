@@ -1,12 +1,12 @@
-pub mod simple_macros;
 pub mod insert;
 pub mod simple_blocks;
+pub mod simple_macros;
 pub mod template;
 use super::types::Macro;
 
-use simple_macros::{macro_clear, macro_time};
 use insert::macro_insert;
 use simple_blocks::{macro_comment, macro_null, macro_repeat};
+use simple_macros::{macro_clear, macro_time};
 use template::macro_template;
 
 pub static MACRO_LIST: [Macro<'_>; 7] = [
@@ -24,7 +24,7 @@ pub static MACRO_LIST: [Macro<'_>; 7] = [
     Macro {
         symbol: "time",
         expand: macro_time,
-        has_scope:false,
+        has_scope: false,
     },
     // Scoped
     Macro {

@@ -40,11 +40,7 @@ pub fn collect_arguments(tokens: &[Token]) -> (Vec<String>, usize) {
             break;
         }
 
-        let mut i = 0;
-        while i < tok.chars().count() {
-            let c = tok.chars().nth(i).unwrap();
-            i += 1;
-
+        for c in tok.chars() {
             if c == '\"' {
                 quoted = !quoted;
                 continue;

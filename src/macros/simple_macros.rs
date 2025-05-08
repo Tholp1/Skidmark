@@ -33,9 +33,9 @@ pub fn macro_time(
 
     if args.len() != 1 {
         let origin_file = context
-        .file_for_index(origin_index)
-        .expect("Macro 'Time' was given a bad origin index")
-        .clone();
+            .file_for_index(origin_index)
+            .expect("Macro 'Time' was given a bad origin index")
+            .clone();
         println!(
             "{:?}:{} ;Time only accepts 1 argument, got given {} ({:?})",
             origin_file.to_str(),

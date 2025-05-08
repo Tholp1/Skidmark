@@ -40,8 +40,7 @@ impl SkidTemplate {
 
         let mut output = self.tokens.clone();
 
-        for tok in &mut output
-        {
+        for tok in &mut output {
             tok.origin_file = origin_index;
         }
 
