@@ -1,15 +1,15 @@
-pub mod clear;
+pub mod simple_macros;
 pub mod insert;
 pub mod simple_blocks;
 pub mod template;
 use super::types::Macro;
 
-use clear::macro_clear;
+use simple_macros::{macro_clear, macro_time};
 use insert::macro_insert;
 use simple_blocks::{macro_comment, macro_null, macro_repeat};
 use template::macro_template;
 
-pub static MACRO_LIST: [Macro<'_>; 6] = [
+pub static MACRO_LIST: [Macro<'_>; 7] = [
     // Unscoped
     Macro {
         symbol: "insert", // Inserts another file
@@ -20,6 +20,11 @@ pub static MACRO_LIST: [Macro<'_>; 6] = [
         symbol: "clear", // Clears text buffer
         expand: macro_clear,
         has_scope: false,
+    },
+    Macro {
+        symbol: "time",
+        expand: macro_time,
+        has_scope:false,
     },
     // Scoped
     Macro {

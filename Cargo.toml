@@ -4,7 +4,9 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
+chrono = "0.4.41"
 glob = "0.3.2"
-markdown = "1.0.0-alpha.21"
+markdown = "1.0.0"
+# markdown = {path = "/home/tholp/Desktop/Code/libs/markdown-rs"}
 serde = "1.0.218"
 toml = "0.8.19"
