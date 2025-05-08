@@ -41,7 +41,7 @@ pub fn collect_arguments(tokens: &[Token]) -> (Vec<String>, usize) {
         }
 
         let mut i = 0;
-        while i < tok.len() {
+        while i < tok.chars().count() {
             let c = tok.chars().nth(i).unwrap();
             i += 1;
 
