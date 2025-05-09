@@ -5,7 +5,7 @@ pub mod template;
 use super::types::Macro;
 
 use insert::macro_insert;
-use simple_blocks::{macro_comment, macro_null, macro_repeat};
+use simple_blocks::{macro_comment, macro_section, macro_repeat};
 use simple_macros::{macro_clear, macro_time};
 use template::macro_template;
 
@@ -39,7 +39,7 @@ pub static MACRO_LIST: [Macro<'_>; 7] = [
     },
     Macro {
         symbol: "section",
-        expand: macro_null,
+        expand: macro_section,
         has_scope: true,
     },
     Macro {

@@ -14,7 +14,7 @@ pub fn macro_comment(
     return Vec::new();
 }
 
-pub fn macro_null(
+pub fn macro_section(
     _file: &mut InputFile,
     _origin_index: usize,
     _origin_line: usize,
@@ -27,6 +27,18 @@ pub fn macro_null(
         tokens.push(tok.clone());
     }
     return tokens;
+}
+
+pub fn macro_preformatted(
+    _file: &mut InputFile,
+    _origin_index: usize,
+    _origin_line: usize,
+    _context: &mut ProjectContext,
+    _args: &Vec<String>,
+    scope: &[Token],
+) -> Vec<Token> {
+
+    Vec::new()
 }
 
 pub fn macro_repeat(

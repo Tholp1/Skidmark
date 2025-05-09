@@ -36,7 +36,7 @@ impl SkidTemplate {
         args: &Vec<String>,
         scope: &[Token],
     ) -> Vec<Token> {
-        println!("{:?}", args);
+        //println!("{:?}", args);
 
         let mut output = self.tokens.clone();
 

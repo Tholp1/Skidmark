@@ -103,7 +103,7 @@ fn process_file(file: &mut InputFile, context: &mut ProjectContext) {
                 for m in &MACRO_LIST {
                     if &symbol[prefix_len..] == m.symbol {
                         matched_macro = true;
-                        println!("Found a macro ({})", m.symbol);
+                        //println!("Found a macro ({})", m.symbol);
 
                         let (args, args_tokcount) =
                             collect_arguments(&file.tokens[file.working_index..]);
@@ -111,7 +111,7 @@ fn process_file(file: &mut InputFile, context: &mut ProjectContext) {
                         let block_tokcount: usize;
 
                         if m.has_scope {
-                            println!("is scoped.");
+                            //println!("is scoped.");
                             let block: Vec<Token>;
                             (block, block_tokcount) =
                                 collect_block(&file.tokens[(file.working_index + args_tokcount)..]);
@@ -159,12 +159,12 @@ fn process_file(file: &mut InputFile, context: &mut ProjectContext) {
                     }
                 }
 
-                // Make this less copied
                 // check for templates
+                // todo maybe deduplicate this
                 for m in &mut file.templates {
                     if &symbol[prefix_len..] == m.symbol {
                         matched_macro = true;
-                        println!("Found a macro ({})", m.symbol);
+                        //println!("Found a macro ({})", m.symbol);
 
                         let (args, args_tokcount) =
                             collect_arguments(&file.tokens[file.working_index..]);
@@ -172,7 +172,7 @@ fn process_file(file: &mut InputFile, context: &mut ProjectContext) {
                         let block_tokcount: usize;
 
                         if m.has_scope {
-                            println!("is scoped.");
+                            //println!("is scoped.");
                             let block: Vec<Token>;
                             (block, block_tokcount) =
                                 collect_block(&file.tokens[(file.working_index + args_tokcount)..]);
@@ -222,7 +222,9 @@ fn process_file(file: &mut InputFile, context: &mut ProjectContext) {
             }
             if !matched_macro {
                 println!(
-                    "Token written as a function but no such function exists \"{}\"",
+                    "[WARN] {:?}:{}; Token written as a function but no such function exists \"{}\"",
+                    file.file_input,
+                    file.tokens[file.working_index].line_number,
                     file.tokens[file.working_index].contents.trim()
                 );
             }
@@ -256,8 +258,8 @@ fn process_file(file: &mut InputFile, context: &mut ProjectContext) {
     )
     .unwrap();
     fs::write(&file.file_htmlout, &html_output).expect("Couldn't write html to file");
-    println!(
-        "{} written.",
+    print!(
+        "{} written.\n\n",
         file.file_htmlout
             .to_str()
             .unwrap_or("Couldnt Unwrap htmlout name")
