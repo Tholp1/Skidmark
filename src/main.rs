@@ -4,7 +4,7 @@ mod stringtools;
 mod types;
 
 use macros::MACRO_LIST;
-use markdown::{to_html_with_options, CompileOptions, Options, ParseOptions};
+use markdown::{to_html_with_options, CompileOptions, Constructs, Options, ParseOptions};
 use projectparse::{parse_project, FileIndexing, ProjectContext};
 use std::{
     env,
@@ -279,7 +279,13 @@ fn process_file(file: &mut InputFile, context: &mut ProjectContext) {
                 allow_any_img_src: true,
                 ..CompileOptions::gfm()
             },
-            ..Options::gfm()
+            parse: ParseOptions {
+                constructs: Constructs {
+                    code_indented: false,
+                    ..Constructs::gfm()
+                },
+                ..ParseOptions::default()
+            },
         },
     )
     .unwrap();
