@@ -156,7 +156,7 @@ pub fn collect_block(tokens: &[Token]) -> Option<(Vec<Token>, usize)> {
     // }
     // pop brackets, bad and ugly but idgaf
     block.drain(..3);
-    block.drain(block.len() - 3..);
+    block.drain(block.len() - 2..);
     return Some((block, tokens_consumed));
 }
 
