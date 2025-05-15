@@ -58,7 +58,7 @@ pub fn collect_arguments(tokens: &[Token]) -> (Vec<String>, usize) {
     return (args, in_token_count);
 }
 
-pub fn collect_block(tokens: &[Token]) -> (Vec<Token>, usize) {
+pub fn collect_block(tokens: &[Token]) -> Option<(Vec<Token>, usize)> {
     let mut entered = false;
     let mut tokens_consumed: usize = 0;
     let mut entering_bracket_count = 0;
@@ -70,6 +70,7 @@ pub fn collect_block(tokens: &[Token]) -> (Vec<Token>, usize) {
 
     // We dont really care about doing anything that in the block right now
     // maybe have the Token struct contain scope level later?
+    let mut escaped_tok: Token = Token::new("\\".into(), 0, 0);
     for tok in tokens {
         tokens_consumed += 1;
         if !entered {
@@ -85,20 +86,14 @@ pub fn collect_block(tokens: &[Token]) -> (Vec<Token>, usize) {
                 //     print!("{} ", t.contents);
                 // }
                 // exit(1);
-                return (Vec::new(), 0);
+                return None;
             }
         }
 
-        if escaped {
-            escaped = false;
-            entering_bracket_count = 0;
-            exiting_bracket_count = 0;
-            block.push(tok.clone());
-            continue;
-        }
+        let mut escaped_used = false;
 
         // Scope Start
-        if tok.contents == "{" {
+        if tok.contents == "{" && !escaped {
             entering_bracket_count += 1;
 
             if entering_bracket_count == 3 {
@@ -110,9 +105,12 @@ pub fn collect_block(tokens: &[Token]) -> (Vec<Token>, usize) {
             }
         } else {
             entering_bracket_count = 0;
+            if escaped {
+                escaped_used = true;
+            }
         }
         // Scope End
-        if tok.contents == "}" {
+        if tok.contents == "}" && !escaped {
             exiting_bracket_count += 1;
             if exiting_bracket_count == 3 {
                 scope_count -= 1;
@@ -123,13 +121,26 @@ pub fn collect_block(tokens: &[Token]) -> (Vec<Token>, usize) {
             }
         } else {
             exiting_bracket_count = 0;
+            if escaped {
+                escaped_used = true;
+            }
+        }
+
+        if escaped_used {
+            escaped = false;
+            block.push(escaped_tok.clone());
         }
 
         if tok.contents == "\\" {
             escaped = true;
+            escaped_tok = tok.clone();
         } else {
             block.push(tok.clone());
         }
+    }
+
+    if scope_count != 0 {
+        return None;
     }
 
     // if block.len() == 6
@@ -146,7 +157,7 @@ pub fn collect_block(tokens: &[Token]) -> (Vec<Token>, usize) {
     // pop brackets, bad and ugly but idgaf
     block.drain(..3);
     block.drain(block.len() - 3..);
-    return (block, tokens_consumed);
+    return Some((block, tokens_consumed));
 }
 
 // Theres no std function to have the delimiters be their own element in the out vector
@@ -162,6 +173,7 @@ pub fn split_keep_delimiters(instr: String) -> Vec<String> {
                 output.push(token.to_string());
             }
             output.push(ending.to_string());
+            //println!("({}, {})", token.to_string(), ending.to_string())
         } else {
             output.push(s.to_string());
         }
@@ -174,6 +186,10 @@ pub fn strings_to_tokens(in_strings: Vec<String>, origin_file: usize) -> Vec<Tok
     let mut line_count = 1;
 
     for str in in_strings {
+        if str.len() == 0 {
+            continue;
+        }
+
         let current_line = line_count;
         for char in str.chars() {
             if char == '\n' {
@@ -193,14 +209,20 @@ pub fn split_to_tokens(instr: String, origin_file: usize) -> Vec<Token> {
     let split = split_keep_delimiters(instr);
     let mut new_split: Vec<String> = Vec::new();
     for s in split {
-        let prefix_offset = s.find(&['!', '&']).unwrap_or(s.len() + 1);
-        if prefix_offset != 0 && prefix_offset != s.len() + 1 {
-            let (first, second) = s.split_at(prefix_offset);
-            println!("\"{}\", \"{}\"", first, second);
-            new_split.push(first.to_string());
-            new_split.push(second.to_string());
+        let prefix_offset = s.find(&['!', '&']);
+        if prefix_offset.is_some() {
+            let (first, second) = s.split_at(prefix_offset.unwrap());
+            //println!("\"{}\", \"{}\"", first, second);
+            if first.len() > 0 {
+                new_split.push(first.to_string());
+            }
+            if second.len() > 0 {
+                new_split.push(second.to_string());
+            }
         } else {
-            new_split.push(s);
+            if s.len() > 0 {
+                new_split.push(s);
+            }
         }
         //sleep(std::time::Duration::from_millis(10));
     }

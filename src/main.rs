@@ -19,8 +19,8 @@ use stringtools::{
 };
 use types::{InputFile, Macro, Token};
 
-static DELIMITERS: [char; 12] = [
-    ' ', '\n', '\t', '(', ')', '{', '}', '[', ']', '\\', '\'', '\"',
+static DELIMITERS: &'static [char] = &[
+    ' ', '\n', '\t', '(', ')', '{', '}', '[', ']', '\\', '\'', '\"', ';',
 ];
 
 fn main() {
@@ -32,7 +32,7 @@ fn main() {
     while !project_path.exists() || project_path.is_dir() {
         let ok = project_folder.pop();
         if !ok {
-            println!("No skidmark.toml project file found in this folder or ancestors.");
+            println!("[ERROR] No skidmark.toml project file found in this folder or ancestors.");
             exit(1);
         }
         project_path = project_folder.clone();
@@ -70,8 +70,15 @@ fn process_file(file: &mut InputFile, context: &mut ProjectContext) {
         //look for macros or blocks
         //println!(">\"{}\"<", file.tokens[file.working_index].contents);
 
+        if file.tokens[file.working_index].contents.len() == 0 {
+            file.working_index += 1;
+            continue;
+        }
+
         if file.tokens[file.working_index].contents == "\\" {
+            file.tokens[file.working_index].contents = "".into();
             file.working_index += 2;
+            //println!("Hit backslash");
             continue;
         }
 
@@ -100,7 +107,7 @@ fn process_file(file: &mut InputFile, context: &mut ProjectContext) {
                 }
 
                 // Check if its a macro
-                for m in &MACRO_LIST {
+                for m in MACRO_LIST {
                     if &symbol[prefix_len..] == m.symbol {
                         matched_macro = true;
                         //println!("Found a macro ({})", m.symbol);
@@ -109,12 +116,21 @@ fn process_file(file: &mut InputFile, context: &mut ProjectContext) {
                             collect_arguments(&file.tokens[file.working_index..]);
                         let expansion: Vec<Token>;
                         let block_tokcount: usize;
-
                         if m.has_scope {
                             //println!("is scoped.");
-                            let block: Vec<Token>;
-                            (block, block_tokcount) =
+
+                            let block_opt =
                                 collect_block(&file.tokens[(file.working_index + args_tokcount)..]);
+                            if block_opt.is_none() {
+                                println!(
+                                    "[ERROR] {:?}:{} ;Malformed block",
+                                    file.tokens[file.working_index].origin_file,
+                                    file.tokens[file.working_index].line_number
+                                );
+                                exit(1);
+                            }
+                            let block: Vec<Token>;
+                            (block, block_tokcount) = block_opt.unwrap();
 
                             if ephemeral {
                                 expansion = Vec::new();
@@ -174,8 +190,18 @@ fn process_file(file: &mut InputFile, context: &mut ProjectContext) {
                         if m.has_scope {
                             //println!("is scoped.");
                             let block: Vec<Token>;
-                            (block, block_tokcount) =
+                            let block_opt =
                                 collect_block(&file.tokens[(file.working_index + args_tokcount)..]);
+                            if block_opt.is_none() {
+                                println!(
+                                    "[ERROR] {:?}:{} ;Malformed block",
+                                    file.tokens[file.working_index].origin_file,
+                                    file.tokens[file.working_index].line_number
+                                );
+                                exit(1);
+                            }
+
+                            (block, block_tokcount) = block_opt.unwrap();
 
                             if ephemeral {
                                 expansion = Vec::new();
@@ -259,7 +285,7 @@ fn process_file(file: &mut InputFile, context: &mut ProjectContext) {
     .unwrap();
     fs::write(&file.file_htmlout, &html_output).expect("Couldn't write html to file");
     print!(
-        "{} written.\n\n",
+        "[OK] {} written.\n\n",
         file.file_htmlout
             .to_str()
             .unwrap_or("Couldnt Unwrap htmlout name")

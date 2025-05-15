@@ -13,19 +13,19 @@ use crate::{
 
 pub fn macro_insert(
     _file: &mut InputFile,
-    _origin_index: usize,
+    origin_index: usize,
     origin_line: usize,
-    _context: &mut ProjectContext,
+    context: &mut ProjectContext,
     args: &Vec<String>,
     _scope: &[Token],
 ) -> Vec<Token> {
-    let origin_file = _context
-        .file_for_index(_origin_index)
+    let origin_file = context
+        .file_for_index(origin_index)
         .expect("Macro 'Insert' was given a bad origin index")
         .clone();
     if args.len() != 1 {
         println!(
-            "{:?}:{} ;Insert only accepts 1 argument, got given {} ({:?})",
+            "[ERROR] {:?}:{} ;Insert only accepts 1 argument, got given {} ({:?})",
             origin_file.to_str(),
             origin_line,
             args.len(),
@@ -57,7 +57,7 @@ pub fn macro_insert(
     }
 
     if search_from_root {
-        let mut include_path = _context.input_folder.clone();
+        let mut include_path = context.input_folder.clone();
         include_path.push(&arg);
 
         if include_path.exists() && include_path.is_file() {
@@ -67,7 +67,7 @@ pub fn macro_insert(
     }
 
     if !ok {
-        println!("\"{:?}\": Insert was unable to find the file \"{}\" relative to its origin or in project root.", origin_file.to_str(), arg);
+        println!("[ERROR] \"{:?}\": Insert was unable to find the file \"{}\" relative to its origin or in project root.", origin_file.to_str(), arg);
         exit(1);
     }
 
@@ -79,6 +79,6 @@ pub fn macro_insert(
     let split_output = split_keep_delimiters(output);
     return strings_to_tokens(
         split_output,
-        _context.index_of_file(&PathBuf::from(&include_file)),
+        context.index_of_file(&PathBuf::from(&include_file)),
     );
 }

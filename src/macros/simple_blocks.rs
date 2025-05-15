@@ -29,7 +29,7 @@ pub fn macro_section(
     return tokens;
 }
 
-pub fn macro_preformatted(
+pub fn macro_skip(
     _file: &mut InputFile,
     _origin_index: usize,
     _origin_line: usize,
@@ -37,7 +37,6 @@ pub fn macro_preformatted(
     _args: &Vec<String>,
     scope: &[Token],
 ) -> Vec<Token> {
-
     Vec::new()
 }
 

@@ -5,11 +5,11 @@ pub mod template;
 use super::types::Macro;
 
 use insert::macro_insert;
-use simple_blocks::{macro_comment, macro_section, macro_repeat};
+use simple_blocks::{macro_comment, macro_repeat, macro_section, macro_skip};
 use simple_macros::{macro_clear, macro_time};
 use template::macro_template;
 
-pub static MACRO_LIST: [Macro<'_>; 7] = [
+pub static MACRO_LIST: &'static [Macro<'_>] = &[
     // Unscoped
     Macro {
         symbol: "insert", // Inserts another file
@@ -45,6 +45,11 @@ pub static MACRO_LIST: [Macro<'_>; 7] = [
     Macro {
         symbol: "template",
         expand: macro_template,
+        has_scope: true,
+    },
+    Macro {
+        symbol: "skip",
+        expand: macro_skip,
         has_scope: true,
     },
 ];

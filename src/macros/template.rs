@@ -79,7 +79,7 @@ pub fn macro_template(
     for t in &file.templates {
         if t.symbol == args[0] {
             println!(
-                "{:?}:{} ; Attempted template redefinition of \"{}\"",
+                "[ERROR] {:?}:{} ; Attempted template redefinition of \"{}\"",
                 context.file_for_index(origin_index).unwrap(),
                 origin_line,
                 args[0]
@@ -88,10 +88,10 @@ pub fn macro_template(
         }
     }
 
-    for t in &MACRO_LIST {
+    for t in MACRO_LIST {
         if t.symbol == args[0] {
             println!(
-                "{:?}:{} ; Attempted to make a template using a reserved name \"{}\"",
+                "[ERROR] {:?}:{} ; Attempted to make a template using a reserved name \"{}\"",
                 context.file_for_index(origin_index).unwrap(),
                 origin_line,
                 args[0]
@@ -107,7 +107,7 @@ pub fn macro_template(
         }
         if param.contains_whitespace() {
             println!(
-                "{:?}:{} ; Attempted to make a template with a parameter that contains whitespace \"{}\"",
+                "[ERROR] {:?}:{} ; Attempted to make a template with a parameter that contains whitespace \"{}\"",
                 context.file_for_index(origin_index).unwrap(),
                 origin_line,
                 param
@@ -118,7 +118,7 @@ pub fn macro_template(
 
     if used_params < args.len() - 1 {
         println!(
-            "{:?}:{} ; Template definition of \"{}\" has {} paramters but only uses {}",
+            "[ERROR] {:?}:{} ; Template definition of \"{}\" has {} paramters but only uses {}",
             context.file_for_index(origin_index).unwrap(),
             origin_line,
             args[0],
