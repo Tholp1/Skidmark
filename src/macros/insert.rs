@@ -7,7 +7,7 @@ use std::{
 
 use crate::{
     projectparse::{FileIndexing, ProjectContext},
-    stringtools::{split_keep_delimiters, strings_to_tokens},
+    stringtools::{split_keep_delimiters, split_to_tokens, strings_to_tokens},
     types::{InputFile, Token},
 };
 
@@ -76,9 +76,5 @@ pub fn macro_insert(
         output.pop();
     } //remove trailing newlines
 
-    let split_output = split_keep_delimiters(output);
-    return strings_to_tokens(
-        split_output,
-        context.index_of_file(&PathBuf::from(&include_file)),
-    );
+    return split_to_tokens(output, context.index_of_file(&PathBuf::from(&include_file)));
 }
