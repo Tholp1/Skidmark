@@ -6,7 +6,7 @@ use super::types::Macro;
 
 use insert::macro_insert;
 use simple_blocks::{macro_comment, macro_repeat, macro_section, macro_skip};
-use simple_macros::{macro_clear, macro_time};
+use simple_macros::{macro_clear, macro_filename, macro_filename_cannonical, macro_time};
 use template::macro_template;
 
 pub static MACRO_LIST: &'static [Macro<'_>] = &[
@@ -24,6 +24,16 @@ pub static MACRO_LIST: &'static [Macro<'_>] = &[
     Macro {
         symbol: "time",
         expand: macro_time,
+        has_scope: false,
+    },
+    Macro {
+        symbol: "filename",
+        expand: macro_filename,
+        has_scope: false,
+    },
+    Macro {
+        symbol: "filename_cannonical",
+        expand: macro_filename_cannonical,
         has_scope: false,
     },
     // Scoped

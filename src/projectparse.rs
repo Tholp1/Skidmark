@@ -5,6 +5,7 @@ use std::{
     iter::{FilterMap, Map},
     os::unix::process,
     path::{Path, PathBuf},
+    process::exit,
     string,
 };
 use toml::{ser, Table};
@@ -169,7 +170,8 @@ pub fn parse_project(tomlpath: &Path) -> Project {
 
 pub trait FileIndexing {
     fn index_of_file(&mut self, f: &PathBuf) -> usize;
-    fn file_for_index(&self, i: usize) -> Option<&PathBuf>;
+    fn file_for_index(&self, i: usize) -> Option<PathBuf>;
+    fn file_for_index_cannonical(&self, i: usize) -> Option<&PathBuf>;
 }
 
 impl FileIndexing for ProjectContext {
@@ -186,7 +188,15 @@ impl FileIndexing for ProjectContext {
         return self.filemap.len() - 1;
     }
 
-    fn file_for_index(&self, i: usize) -> Option<&PathBuf> {
+    fn file_for_index(&self, i: usize) -> Option<PathBuf> {
+        if i >= self.filemap.len() {
+            return None;
+        }
+        let path = self.filemap[i].strip_prefix(&self.input_folder.canonicalize().unwrap());
+        return Some(path.unwrap().to_path_buf());
+    }
+
+    fn file_for_index_cannonical(&self, i: usize) -> Option<&PathBuf> {
         if i >= self.filemap.len() {
             return None;
         }

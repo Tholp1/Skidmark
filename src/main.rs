@@ -249,7 +249,7 @@ fn process_file(file: &mut InputFile, context: &mut ProjectContext) {
             if !matched_macro {
                 println!(
                     "[WARN] {:?}:{}; Token written as a function but no such function exists \"{}\"",
-                    file.file_input,
+                    context.file_for_index(file.tokens[file.working_index].origin_file).unwrap(),
                     file.tokens[file.working_index].line_number,
                     file.tokens[file.working_index].contents.trim()
                 );

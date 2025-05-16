@@ -20,7 +20,7 @@ pub fn macro_insert(
     _scope: &[Token],
 ) -> Vec<Token> {
     let origin_file = context
-        .file_for_index(origin_index)
+        .file_for_index_cannonical(origin_index)
         .expect("Macro 'Insert' was given a bad origin index")
         .clone();
     if args.len() != 1 {
@@ -67,7 +67,7 @@ pub fn macro_insert(
     }
 
     if !ok {
-        println!("[ERROR] \"{:?}\": Insert was unable to find the file \"{}\" relative to its origin or in project root.", origin_file.to_str(), arg);
+        println!("[ERROR] {:?}: Insert was unable to find the file \"{}\" relative to its origin or in project root.", origin_file.to_str().unwrap(), arg);
         exit(1);
     }
 

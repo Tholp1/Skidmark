@@ -1,3 +1,4 @@
+// This file for implementations of short macros, im qualifying that as less than 30ish lines
 use std::process::exit;
 
 use chrono::{DateTime, Local};
@@ -47,4 +48,42 @@ pub fn macro_time(
     }
 
     return split_to_tokens(t.format(&args[0]).to_string(), origin_index);
+}
+
+pub fn macro_filename(
+    _file: &mut InputFile,
+    origin_index: usize,
+    _origin_line: usize,
+    context: &mut ProjectContext,
+    _args: &Vec<String>,
+    _scope: &[Token],
+) -> Vec<Token> {
+    return split_to_tokens(
+        context
+            .file_for_index(origin_index)
+            .unwrap()
+            .to_str()
+            .unwrap()
+            .into(),
+        origin_index,
+    );
+}
+
+pub fn macro_filename_cannonical(
+    _file: &mut InputFile,
+    origin_index: usize,
+    _origin_line: usize,
+    context: &mut ProjectContext,
+    _args: &Vec<String>,
+    _scope: &[Token],
+) -> Vec<Token> {
+    return split_to_tokens(
+        context
+            .file_for_index_cannonical(origin_index)
+            .unwrap()
+            .to_str()
+            .unwrap()
+            .into(),
+        origin_index,
+    );
 }
