@@ -20,7 +20,7 @@ pub fn macro_insert(
     _scope: &[Token],
 ) -> Vec<Token> {
     let origin_file = context
-        .file_for_index_cannonical(origin_index)
+        .file_for_index_canonical(origin_index)
         .expect("Macro 'Insert' was given a bad origin index")
         .clone();
     if args.len() != 1 {

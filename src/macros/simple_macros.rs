@@ -79,7 +79,7 @@ pub fn macro_filename_canonical(
 ) -> Vec<Token> {
     return split_to_tokens(
         context
-            .file_for_index_cannonical(origin_index)
+            .file_for_index_canonical(origin_index)
             .unwrap()
             .to_str()
             .unwrap()
