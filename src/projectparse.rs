@@ -171,7 +171,7 @@ pub fn parse_project(tomlpath: &Path) -> Project {
 pub trait FileIndexing {
     fn index_of_file(&mut self, f: &PathBuf) -> usize;
     fn file_for_index(&self, i: usize) -> Option<PathBuf>;
-    fn file_for_index_cannonical(&self, i: usize) -> Option<&PathBuf>;
+    fn file_for_index_canonical(&self, i: usize) -> Option<&PathBuf>;
 }
 
 impl FileIndexing for ProjectContext {
@@ -196,7 +196,7 @@ impl FileIndexing for ProjectContext {
         return Some(path.unwrap().to_path_buf());
     }
 
-    fn file_for_index_cannonical(&self, i: usize) -> Option<&PathBuf> {
+    fn file_for_index_canonical(&self, i: usize) -> Option<&PathBuf> {
         if i >= self.filemap.len() {
             return None;
         }

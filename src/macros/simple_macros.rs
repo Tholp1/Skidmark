@@ -69,7 +69,7 @@ pub fn macro_filename(
     );
 }
 
-pub fn macro_filename_cannonical(
+pub fn macro_filename_canonical(
     _file: &mut InputFile,
     origin_index: usize,
     _origin_line: usize,
