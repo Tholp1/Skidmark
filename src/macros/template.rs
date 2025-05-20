@@ -102,12 +102,36 @@ impl SkidTemplate {
             args_index += 1;
         }
 
-        let mut found_pattern = find_pattern(&output, "[[{}]]".into());
-        while found_pattern.is_some() {
-            let (start, len) = found_pattern.unwrap();
+        let mut found_block_pattern = find_pattern(&output, "[[{}]]".into());
+        while found_block_pattern.is_some() {
+            let (start, len) = found_block_pattern.unwrap();
             let replacement = scope.to_vec();
             output.splice(start..start + len, replacement);
-            found_pattern = find_pattern(&output, "[[{}]]".into());
+            found_block_pattern = find_pattern(&output, "[[{}]]".into());
+        }
+
+        //replace [[..]] with space seperated remaining args
+        let mut found_trailing_pattern = find_pattern(&output, "[[..]]".into());
+        while found_trailing_pattern.is_some() {
+            let (start, len) = found_trailing_pattern.unwrap();
+            let mut replacement = Vec::new();
+            for arg in &args[self.args.len()..] {
+                replacement.append(&mut split_to_tokens(arg.clone() + " ".into(), origin_index));
+            }
+            output.splice(start..start + len, replacement);
+            found_trailing_pattern = find_pattern(&output, "[[..]]".into());
+        }
+
+        //replace [[".."]] with space seperated quoted remaining args
+        found_trailing_pattern = find_pattern(&output, "[[\"..\"]]".into());
+        while found_trailing_pattern.is_some() {
+            let (start, len) = found_trailing_pattern.unwrap();
+            let mut replacement = Vec::new();
+            for arg in &args[self.args.len()..] {
+                replacement.append(&mut split_to_tokens("\"".to_string() + arg + "\" ".into(), origin_index));
+            }
+            output.splice(start..start + len, replacement);
+            found_trailing_pattern = find_pattern(&output, "[[\"..\"]]".into());
         }
 
         output
@@ -142,6 +166,20 @@ pub fn macro_template(
                 format!(
                     "Attempted to make a template using a reserved name \"{}\"",
                     args[0]
+                ),
+            );
+        }
+    }
+
+    for arg in args {
+        if arg == ".." || arg == "\"..\"" {
+            error_skid(
+                context,
+                origin_index,
+                origin_line,
+                format!(
+                    "Attempted to make a template using a reserved parameter name \"{}\"",
+                    arg
                 ),
             );
         }

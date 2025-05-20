@@ -297,7 +297,7 @@ fn process_file(file: &mut InputFile, context: &mut ProjectContext) {
     .unwrap();
     fs::write(&file.file_htmlout, &html_output).expect("Couldn't write html to file");
     ok_generic(format!(
-        "{} written \n\n",
+        "\"{}\" written \n\n",
         file.file_htmlout
             .to_str()
             .unwrap_or("Couldnt Unwrap htmlout name")
