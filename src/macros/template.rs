@@ -1,6 +1,7 @@
-use std::{process::exit, thread::scope};
+use std::{fmt::format, process::exit, thread::scope};
 
 use crate::{
+    console::error_skid,
     projectparse::{FileIndexing, ProjectContext},
     stringtools::{find_pattern, split_to_tokens, strings_to_tokens, WhitespaceChecks},
     types::{InputFile, Token},
@@ -14,17 +15,21 @@ pub struct SkidTemplate {
     pub tokens: Vec<Token>,
 
     pub has_scope: bool,
+    pub allows_trailing_args: bool,
 }
 
 impl SkidTemplate {
     pub fn new(name: String, args: &[String], tokens: &[Token]) -> SkidTemplate {
         let scoped: bool = find_pattern(&tokens, "[[{}]]".into()).is_some();
+        let trailing: bool = find_pattern(&tokens, "[[..]]".into()).is_some()
+            || find_pattern(&tokens, "[[\"..\"]]".into()).is_some();
 
         SkidTemplate {
             symbol: name,
             args: args.to_vec(),
             tokens: tokens.to_vec(),
             has_scope: scoped,
+            allows_trailing_args: trailing,
         }
     }
 
@@ -32,11 +37,52 @@ impl SkidTemplate {
         &self,
         //_file: &mut InputFile,
         origin_index: usize,
-        _context: &mut ProjectContext,
+        origin_line: usize,
+        context: &mut ProjectContext,
         args: &Vec<String>,
         scope: &[Token],
     ) -> Vec<Token> {
         //println!("{:?}", args);
+
+        if !self.allows_trailing_args && args.len() != self.args.len() {
+            // println!(
+            //     "[ERROR] {:?}:{}; Template \"{}\" requires exactly {} arguments, got given {} ({:?})",
+            //     context.file_for_index(origin_index).unwrap(),
+            //     origin_line,
+            //     self.symbol,
+            //     self.args.len(),
+            //     args.len(),
+            //     args
+            // );
+            // exit(1);
+
+            error_skid(
+                context,
+                origin_index,
+                origin_line,
+                format!(
+                    "Template \"{}\" requires exactly {} arguments, got given {} ({:?})",
+                    self.symbol,
+                    self.args.len(),
+                    args.len(),
+                    args
+                ),
+            );
+        }
+        if self.allows_trailing_args && args.len() < self.args.len() {
+            error_skid(
+                context,
+                origin_index,
+                origin_line,
+                format!(
+                    "Template \"{}\" requires at least {} arguments, got given {} ({:?})",
+                    self.symbol,
+                    self.args.len(),
+                    args.len(),
+                    args
+                ),
+            );
+        }
 
         let mut output = self.tokens.clone();
 
@@ -78,25 +124,26 @@ pub fn macro_template(
 ) -> Vec<Token> {
     for t in &file.templates {
         if t.symbol == args[0] {
-            println!(
-                "[ERROR] {:?}:{} ; Attempted template redefinition of \"{}\"",
-                context.file_for_index(origin_index).unwrap(),
+            error_skid(
+                context,
+                origin_index,
                 origin_line,
-                args[0]
+                format!("Attempted template redefinition of \"{}\"", args[0]),
             );
-            exit(1);
         }
     }
 
     for t in MACRO_LIST {
         if t.symbol == args[0] {
-            println!(
-                "[ERROR] {:?}:{} ; Attempted to make a template using a reserved name \"{}\"",
-                context.file_for_index(origin_index).unwrap(),
+            error_skid(
+                context,
+                origin_index,
                 origin_line,
-                args[0]
+                format!(
+                    "Attempted to make a template using a reserved name \"{}\"",
+                    args[0]
+                ),
             );
-            exit(1);
         }
     }
 
@@ -106,26 +153,30 @@ pub fn macro_template(
             used_params += 1;
         }
         if param.contains_whitespace() {
-            println!(
-                "[ERROR] {:?}:{} ; Attempted to make a template with a parameter that contains whitespace \"{}\"",
-                context.file_for_index(origin_index).unwrap(),
+            error_skid(
+                context,
+                origin_index,
                 origin_line,
-                param
+                format!(
+                    "Attempted to make a template with a parameter that contains whitespace \"{}\"",
+                    param
+                ),
             );
-            exit(1);
         }
     }
 
     if used_params < args.len() - 1 {
-        println!(
-            "[ERROR] {:?}:{} ; Template definition of \"{}\" has {} paramters but only uses {}",
-            context.file_for_index(origin_index).unwrap(),
+        error_skid(
+            context,
+            origin_index,
             origin_line,
-            args[0],
-            args.len() - 1,
-            used_params
+            format!(
+                "Template definition of \"{}\" has {} paramters but only uses {}",
+                args[0],
+                args.len() - 1,
+                used_params
+            ),
         );
-        exit(1);
     }
 
     let template = SkidTemplate::new(args[0].clone(), &args[1..], scope);

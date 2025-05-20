@@ -5,7 +5,7 @@ pub mod template;
 use super::types::Macro;
 
 use insert::macro_insert;
-use simple_blocks::{macro_comment, macro_repeat, macro_section, macro_skip};
+use simple_blocks::{macro_comment, macro_for_each_arg, macro_repeat, macro_section};
 use simple_macros::{macro_clear, macro_filename, macro_filename_canonical, macro_time};
 use template::macro_template;
 
@@ -58,8 +58,8 @@ pub static MACRO_LIST: &'static [Macro<'_>] = &[
         has_scope: true,
     },
     Macro {
-        symbol: "skip",
-        expand: macro_skip,
+        symbol: "for_each_arg",
+        expand: macro_for_each_arg,
         has_scope: true,
     },
 ];

@@ -1,8 +1,10 @@
+mod console;
 mod macros;
 mod projectparse;
 mod stringtools;
 mod types;
 
+use console::*;
 use macros::MACRO_LIST;
 use markdown::{to_html_with_options, CompileOptions, Constructs, Options, ParseOptions};
 use projectparse::{parse_project, FileIndexing, ProjectContext};
@@ -32,8 +34,9 @@ fn main() {
     while !project_path.exists() || project_path.is_dir() {
         let ok = project_folder.pop();
         if !ok {
-            println!("[ERROR] No skidmark.toml project file found in this folder or ancestors.");
-            exit(1);
+            error_generic(
+                "No skidmark.toml project file found in this folder or ancestors.".into(),
+            );
         }
         project_path = project_folder.clone();
         project_path.push("skidmark.toml");
@@ -122,12 +125,12 @@ fn process_file(file: &mut InputFile, context: &mut ProjectContext) {
                             let block_opt =
                                 collect_block(&file.tokens[(file.working_index + args_tokcount)..]);
                             if block_opt.is_none() {
-                                println!(
-                                    "[ERROR] {:?}:{} ;Malformed block",
-                                    file.tokens[file.working_index].origin_file,
-                                    file.tokens[file.working_index].line_number
+                                error_skid(
+                                    context,
+                                    file.tokens[file.working_index].template_origin,
+                                    file.tokens[file.working_index].line_number,
+                                    "Malformed Block".into(),
                                 );
-                                exit(1);
                             }
                             let block: Vec<Token>;
                             (block, block_tokcount) = block_opt.unwrap();
@@ -193,12 +196,12 @@ fn process_file(file: &mut InputFile, context: &mut ProjectContext) {
                             let block_opt =
                                 collect_block(&file.tokens[(file.working_index + args_tokcount)..]);
                             if block_opt.is_none() {
-                                println!(
-                                    "[ERROR] {:?}:{} ;Malformed block",
-                                    file.tokens[file.working_index].origin_file,
-                                    file.tokens[file.working_index].line_number
+                                error_skid(
+                                    context,
+                                    file.tokens[file.working_index].template_origin,
+                                    file.tokens[file.working_index].line_number,
+                                    "Malformed Block".into(),
                                 );
-                                exit(1);
                             }
 
                             (block, block_tokcount) = block_opt.unwrap();
@@ -209,7 +212,7 @@ fn process_file(file: &mut InputFile, context: &mut ProjectContext) {
                                 expansion = m.expand(
                                     //file,
                                     file.tokens[file.working_index].origin_file,
-                                    //file.tokens[file.working_index].line_number,
+                                    file.tokens[file.working_index].line_number,
                                     context,
                                     &args,
                                     &block,
@@ -224,7 +227,7 @@ fn process_file(file: &mut InputFile, context: &mut ProjectContext) {
                                 expansion = m.expand(
                                     //file,
                                     file.tokens[file.working_index].origin_file,
-                                    //file.tokens[file.working_index].line_number,
+                                    file.tokens[file.working_index].line_number,
                                     context,
                                     &args,
                                     &Vec::new()[..],
@@ -247,11 +250,14 @@ fn process_file(file: &mut InputFile, context: &mut ProjectContext) {
                 }
             }
             if !matched_macro {
-                println!(
-                    "[WARN] {:?}:{}; Token written as a function but no such function exists \"{}\"",
-                    context.file_for_index(file.tokens[file.working_index].origin_file).unwrap(),
+                warn_skid(
+                    context,
+                    file.tokens[file.working_index].origin_file,
                     file.tokens[file.working_index].line_number,
-                    file.tokens[file.working_index].contents.trim()
+                    format!(
+                        "Token written as a function but no such function exists \"{}\"",
+                        file.tokens[file.working_index].contents.trim()
+                    ),
                 );
             }
         }
@@ -290,10 +296,10 @@ fn process_file(file: &mut InputFile, context: &mut ProjectContext) {
     )
     .unwrap();
     fs::write(&file.file_htmlout, &html_output).expect("Couldn't write html to file");
-    print!(
-        "[OK] {} written.\n\n",
+    ok_generic(format!(
+        "{} written \n\n",
         file.file_htmlout
             .to_str()
             .unwrap_or("Couldnt Unwrap htmlout name")
-    );
+    ));
 }

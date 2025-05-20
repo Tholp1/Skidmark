@@ -6,6 +6,7 @@ use std::{
 };
 
 use crate::{
+    console::error_skid,
     projectparse::{FileIndexing, ProjectContext},
     stringtools::{split_keep_delimiters, split_to_tokens, strings_to_tokens},
     types::{InputFile, Token},
@@ -24,14 +25,16 @@ pub fn macro_insert(
         .expect("Macro 'Insert' was given a bad origin index")
         .clone();
     if args.len() != 1 {
-        println!(
-            "[ERROR] {:?}:{} ;Insert only accepts 1 argument, got given {} ({:?})",
-            origin_file.to_str(),
+        error_skid(
+            context,
+            origin_index,
             origin_line,
-            args.len(),
-            args
+            format!(
+                "Insert only accepts 1 argument, got given {} ({:?})",
+                args.len(),
+                args
+            ),
         );
-        exit(1);
     }
 
     let mut arg = args[0].clone();
@@ -67,8 +70,7 @@ pub fn macro_insert(
     }
 
     if !ok {
-        println!("[ERROR] {:?}: Insert was unable to find the file \"{}\" relative to its origin or in project root.", origin_file.to_str().unwrap(), arg);
-        exit(1);
+        error_skid(context, origin_index, origin_line, format!("Insert was unable to find the file \"{}\" relative to its origin or in project root.", arg));
     }
 
     let mut output = fs::read_to_string(&include_file).expect("File unreadable or missing");

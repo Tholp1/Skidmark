@@ -5,6 +5,7 @@ use crate::{macros::template::SkidTemplate, projectparse::ProjectContext};
 pub struct Token {
     pub contents: String,
     pub origin_file: usize,
+    pub template_origin: usize,
     pub line_number: usize,
 }
 
@@ -52,6 +53,7 @@ impl Token {
         Token {
             contents: contents,
             origin_file: origin_file,
+            template_origin: origin_file,
             line_number: line_number,
         }
     }
@@ -65,10 +67,12 @@ impl ToString for Token {
 
 impl Clone for Token {
     fn clone(&self) -> Self {
-        return Token::new(
+        let mut t = Token::new(
             self.contents.clone(),
             self.origin_file.clone(),
             self.line_number,
         );
+        t.template_origin = self.template_origin;
+        return t;
     }
 }
