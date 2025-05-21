@@ -5,7 +5,7 @@ use std::{env::args, fmt::format, process::exit};
 use crate::{
     console::error_skid,
     projectparse::{FileIndexing, ProjectContext},
-    stringtools::{find_pattern, split_to_tokens},
+    stringtools::{find_pattern, split_to_tokens, TokenTools, WhitespaceChecks},
     types::{InputFile, Token},
 };
 
@@ -102,7 +102,7 @@ pub fn macro_for_each_arg(
             let (start, len) = found_pattern.unwrap();
             let replacement = split_to_tokens(arg.clone(), origin_index);
             arg_output.splice(start..start + len, replacement);
-            found_pattern = find_pattern(&output, format!("[[..{}]]", replacement_index + 1));
+            found_pattern = find_pattern(&arg_output, format!("[[..{}]]", replacement_index + 1));
             println!("{}", replacement_index + 1);
         }
 
@@ -110,7 +110,7 @@ pub fn macro_for_each_arg(
         replacement_index += 1;
         if replacement_index == replacement_count {
             replacement_index = 0;
-            output.append(&mut arg_output);
+            output.append(&mut arg_output.trim_whitespace().into());
             arg_output = block.clone();
             println!("push");
         }

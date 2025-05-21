@@ -22,7 +22,7 @@ use stringtools::{
 use types::{InputFile, Macro, Token};
 
 static DELIMITERS: &'static [char] = &[
-    ' ', '\n', '\t', '(', ')', '{', '}', '[', ']', '\\', '\'', '\"', ';',
+    ' ', '\n', '\t', '(', ')', '{', '}', '[', ']', '<', '>', '\\', '\'', '\"', ';',
 ];
 
 fn main() {

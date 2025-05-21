@@ -309,3 +309,13 @@ impl WhitespaceChecks for String {
         return false;
     }
 }
+
+pub trait TokenTools {
+    fn trim_whitespace(&mut self) -> &[Token];
+}
+
+impl TokenTools for Vec<Token> {
+    fn trim_whitespace(&mut self) -> &[Token] {
+        return trim_whitespace_tokens(&self[..]);
+    }
+}

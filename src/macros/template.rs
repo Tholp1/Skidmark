@@ -128,7 +128,10 @@ impl SkidTemplate {
             let (start, len) = found_trailing_pattern.unwrap();
             let mut replacement = Vec::new();
             for arg in &args[self.args.len()..] {
-                replacement.append(&mut split_to_tokens("\"".to_string() + arg + "\" ".into(), origin_index));
+                replacement.append(&mut split_to_tokens(
+                    "\"".to_string() + arg + "\" ".into(),
+                    origin_index,
+                ));
             }
             output.splice(start..start + len, replacement);
             found_trailing_pattern = find_pattern(&output, "[[\"..\"]]".into());
