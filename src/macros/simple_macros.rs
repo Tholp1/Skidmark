@@ -4,6 +4,7 @@ use std::process::exit;
 use chrono::{DateTime, Local};
 
 use crate::{
+    console::error_skid,
     projectparse::{FileIndexing, ProjectContext},
     stringtools::split_to_tokens,
     types::{InputFile, Token},
@@ -33,16 +34,15 @@ pub fn macro_time(
     let t = Local::now();
 
     if args.len() != 1 {
-        let origin_file = context
-            .file_for_index(origin_index)
-            .expect("Macro 'Time' was given a bad origin index")
-            .clone();
-        println!(
-            "{:?}:{} ;Time only accepts 1 argument, got given {} ({:?})",
-            origin_file.to_str(),
+        error_skid(
+            context,
+            origin_index,
             origin_line,
-            args.len(),
-            args
+            format!(
+                "Time only accepts 1 argument, got given {} ({:?})",
+                args.len(),
+                args
+            ),
         );
         exit(1);
     }
