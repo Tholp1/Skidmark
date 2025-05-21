@@ -3,7 +3,6 @@ use std::{
     any::Any,
     fs,
     iter::{FilterMap, Map},
-    os::unix::process,
     path::{Path, PathBuf},
     process::exit,
     string,
