@@ -103,18 +103,18 @@ pub fn macro_for_each_arg(
             let replacement = split_to_tokens(arg.clone(), origin_index);
             arg_output.splice(start..start + len, replacement);
             found_pattern = find_pattern(&arg_output, format!("[[..{}]]", replacement_index + 1));
-            println!("{}", replacement_index + 1);
+            //println!("{}", replacement_index + 1);
         }
 
-        println!("{} {}", replacement_index, replacement_count);
+        //println!("{} {}", replacement_index, replacement_count);
         replacement_index += 1;
         if replacement_index == replacement_count {
             replacement_index = 0;
             output.append(&mut arg_output.trim_whitespace().into());
             arg_output = block.clone();
-            println!("push");
+            //println!("push");
         }
-        println!("test");
+        //println!("test");
     }
 
     return output;

@@ -7,9 +7,9 @@ mod types;
 use console::*;
 use macros::MACRO_LIST;
 use markdown::{to_html_with_options, CompileOptions, Constructs, Options, ParseOptions};
-use projectparse::{parse_project, FileIndexing, ProjectContext};
+use projectparse::{parse_project, FileGroup, FileIndexing, ProjectContext};
 use std::{
-    env,
+    convert, env,
     fs::{self, File},
     io::Write,
     path::PathBuf,
@@ -20,6 +20,8 @@ use stringtools::{
     trim_whitespace_tokens,
 };
 use types::{InputFile, Macro, Token};
+
+use crate::types::Expand;
 
 static DELIMITERS: &'static [char] = &[
     ' ', '\n', '\t', '(', ')', '{', '}', '[', ']', '<', '>', '\\', '\'', '\"', ';',
@@ -55,12 +57,12 @@ fn main() {
     println!("Proccesing {} files.", num);
     for group in &mut project.filegroups {
         for infile in &mut group.files {
-            process_file(infile, &mut project.context);
+            process_file(infile, group.convert_html, &mut project.context);
         }
     }
 }
 
-fn process_file(file: &mut InputFile, context: &mut ProjectContext) {
+fn process_file(file: &mut InputFile, convert_html: bool, context: &mut ProjectContext) {
     //}, context: &mut ProjectContext) {
     let contents = fs::read_to_string(&file.file_input).expect("File unreadable or missing");
     //println!("{}\n {}", f.filename_out, contents);
@@ -138,7 +140,7 @@ fn process_file(file: &mut InputFile, context: &mut ProjectContext) {
                             if ephemeral {
                                 expansion = Vec::new();
                             } else {
-                                expansion = (m.expand)(
+                                expansion = m.expand(
                                     file,
                                     file.tokens[file.working_index].origin_file,
                                     file.tokens[file.working_index].line_number,
@@ -153,7 +155,7 @@ fn process_file(file: &mut InputFile, context: &mut ProjectContext) {
                             if ephemeral {
                                 expansion = Vec::new();
                             } else {
-                                expansion = (m.expand)(
+                                expansion = m.expand(
                                     file,
                                     file.tokens[file.working_index].origin_file,
                                     file.tokens[file.working_index].line_number,
@@ -270,36 +272,48 @@ fn process_file(file: &mut InputFile, context: &mut ProjectContext) {
     for t in &file.tokens {
         skid_output += &t.contents;
     }
-    fs::write(&file.file_skidout, &skid_output).expect("Couldn't write skid to file");
 
-    //let html_output = markdown::to_html(&skid_output);
-    let html_output = markdown::to_html_with_options(
-        &skid_output,
-        &Options {
-            compile: CompileOptions {
-                allow_dangerous_html: true,
-                allow_dangerous_protocol: true,
-                gfm_tagfilter: false,
-                // gfm_footnote_clobber_prefix:
-                gfm_task_list_item_checkable: true,
-                allow_any_img_src: true,
-                ..CompileOptions::gfm()
-            },
-            parse: ParseOptions {
-                constructs: Constructs {
-                    code_indented: false,
-                    ..Constructs::gfm()
+    if convert_html {
+        fs::write(&file.file_skidout, &skid_output).expect("Couldn't write skid to file");
+
+        //let html_output = markdown::to_html(&skid_output);
+        let html_output = markdown::to_html_with_options(
+            &skid_output,
+            &Options {
+                compile: CompileOptions {
+                    allow_dangerous_html: true,
+                    allow_dangerous_protocol: true,
+                    gfm_tagfilter: false,
+                    // gfm_footnote_clobber_prefix:
+                    gfm_task_list_item_checkable: true,
+                    allow_any_img_src: true,
+                    ..CompileOptions::gfm()
                 },
-                ..ParseOptions::default()
+                parse: ParseOptions {
+                    constructs: Constructs {
+                        code_indented: false,
+                        //html_flow: false,
+                        ..Constructs::gfm()
+                    },
+                    ..ParseOptions::default()
+                },
             },
-        },
-    )
-    .unwrap();
-    fs::write(&file.file_htmlout, &html_output).expect("Couldn't write html to file");
-    ok_generic(format!(
-        "\"{}\" written \n\n",
-        file.file_htmlout
-            .to_str()
-            .unwrap_or("Couldnt Unwrap htmlout name")
-    ));
+        )
+        .unwrap();
+        fs::write(&file.file_out, &html_output).expect("Couldn't write output to file");
+        ok_generic(format!(
+            "\"{}\" written \n\n",
+            file.file_out
+                .to_str()
+                .unwrap_or("Couldnt Unwrap file_out name")
+        ));
+    } else {
+        fs::write(&file.file_out, &skid_output).expect("Couldn't write output to file");
+        ok_generic(format!(
+            "\"{}\" written \n\n",
+            file.file_out
+                .to_str()
+                .unwrap_or("Couldnt Unwrap file_out name")
+        ));
+    }
 }

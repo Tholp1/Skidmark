@@ -21,6 +21,8 @@ pub struct FileGroup {
     pub pre_insert: PathBuf,
     pub post_insert: PathBuf,
     pub process: bool,
+    pub convert_html: bool,
+    pub output_extention: String,
 }
 
 // pub struct ProjectSettings {
@@ -118,10 +120,12 @@ pub fn parse_project(tomlpath: &Path) -> Project {
             continue;
         }
         let filegroup_def: &toml::map::Map<String, toml::Value> = v.as_table().unwrap();
-        let name = k.clone();
+
         let pre_insert = get_table_string_or_default!(filegroup_def, "preInsert", "");
         let post_insert = get_table_string_or_default!(filegroup_def, "postInsert", "");
         let process = get_table_bool_or_default!(filegroup_def, "process", false);
+        let convert_html = get_table_bool_or_default!(filegroup_def, "convertHTML", true);
+        let extention = get_table_string_or_default!(filegroup_def, "outputExtention", "html");
 
         let recurse_find = get_table_bool_or_default!(filegroup_def, "recursiveFind", false);
 
@@ -133,6 +137,8 @@ pub fn parse_project(tomlpath: &Path) -> Project {
             pre_insert: pre_insert.into(),
             post_insert: post_insert.into(),
             process,
+            convert_html,
+            output_extention: extention.into(),
         };
 
         if filegroup_def.contains_key("files") {
@@ -146,15 +152,16 @@ pub fn parse_project(tomlpath: &Path) -> Project {
                         k
                     )
                 });
+
                 let mut new_file = crate::types::InputFile::new();
                 new_file.file_input = project.context.input_folder.clone();
                 new_file.file_input.push(filename);
 
-                new_file.file_htmlout = project.context.output_folder.clone();
-                new_file.file_htmlout.push(filename);
-                new_file.file_htmlout.set_extension("html");
+                new_file.file_out = project.context.output_folder.clone();
+                new_file.file_out.push(filename);
+                new_file.file_out.set_extension(extention);
 
-                new_file.file_skidout = new_file.file_htmlout.clone();
+                new_file.file_skidout = new_file.file_out.clone();
                 new_file.file_skidout.set_extension("sko");
 
                 group.files.push(new_file);

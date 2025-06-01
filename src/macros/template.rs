@@ -102,14 +102,6 @@ impl SkidTemplate {
             args_index += 1;
         }
 
-        let mut found_block_pattern = find_pattern(&output, "[[{}]]".into());
-        while found_block_pattern.is_some() {
-            let (start, len) = found_block_pattern.unwrap();
-            let replacement = scope.to_vec();
-            output.splice(start..start + len, replacement);
-            found_block_pattern = find_pattern(&output, "[[{}]]".into());
-        }
-
         //replace [[..]] with space seperated remaining args
         let mut found_trailing_pattern = find_pattern(&output, "[[..]]".into());
         while found_trailing_pattern.is_some() {
@@ -135,6 +127,14 @@ impl SkidTemplate {
             }
             output.splice(start..start + len, replacement);
             found_trailing_pattern = find_pattern(&output, "[[\"..\"]]".into());
+        }
+
+        let mut found_block_pattern = find_pattern(&output, "[[{}]]".into());
+        while found_block_pattern.is_some() {
+            let (start, len) = found_block_pattern.unwrap();
+            let replacement = scope.to_vec();
+            output.splice(start..start + len, replacement);
+            found_block_pattern = find_pattern(&output, "[[{}]]".into());
         }
 
         output

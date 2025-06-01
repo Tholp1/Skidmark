@@ -9,57 +9,77 @@ use simple_blocks::{macro_comment, macro_for_each_arg, macro_repeat, macro_secti
 use simple_macros::{macro_clear, macro_filename, macro_filename_canonical, macro_time};
 use template::macro_template;
 
-pub static MACRO_LIST: &'static [Macro<'_>] = &[
+pub static MACRO_LIST: &'static [Macro] = &[
     // Unscoped
     Macro {
         symbol: "insert", // Inserts another file
-        expand: macro_insert,
+        expansion: macro_insert,
         has_scope: false,
+        min_args: 1,
+        max_args: 1,
     },
     Macro {
         symbol: "clear", // Clears text buffer
-        expand: macro_clear,
+        expansion: macro_clear,
         has_scope: false,
+        min_args: 0,
+        max_args: 0,
     },
     Macro {
         symbol: "time",
-        expand: macro_time,
+        expansion: macro_time,
         has_scope: false,
+        min_args: 1,
+        max_args: 1,
     },
     Macro {
         symbol: "filename",
-        expand: macro_filename,
+        expansion: macro_filename,
         has_scope: false,
+        min_args: 0,
+        max_args: 0,
     },
     Macro {
         symbol: "filename_canonical",
-        expand: macro_filename_canonical,
+        expansion: macro_filename_canonical,
         has_scope: false,
+        min_args: 0,
+        max_args: 0,
     },
     // Scoped
     Macro {
         symbol: "comment", // Nothing
-        expand: macro_comment,
+        expansion: macro_comment,
         has_scope: true,
+        min_args: 0,
+        max_args: 0,
     },
     Macro {
         symbol: "repeat", // Outputs what its give x number of times
-        expand: macro_repeat,
+        expansion: macro_repeat,
         has_scope: true,
+        min_args: 1,
+        max_args: 1,
     },
     Macro {
         symbol: "section",
-        expand: macro_section,
+        expansion: macro_section,
         has_scope: true,
+        min_args: 0,
+        max_args: 1,
     },
     Macro {
         symbol: "template",
-        expand: macro_template,
+        expansion: macro_template,
         has_scope: true,
+        min_args: 1,
+        max_args: usize::max_value(),
     },
     Macro {
         symbol: "for_each_arg",
-        expand: macro_for_each_arg,
+        expansion: macro_for_each_arg,
         has_scope: true,
+        min_args: 1,
+        max_args: usize::max_value(),
     },
 ];
