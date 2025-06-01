@@ -1,4 +1,0 @@
-used to include files inside other files, isnt that cool?
-
-Functions prefixed with '&' are "Ephemeral" and will only be expanded if it comes from within the same file thats being proccessed
-&include("c.sk")
