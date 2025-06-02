@@ -1,13 +1,9 @@
-use crate::types::{self, InputFile};
+use crate::types::InputFile;
 use std::{
-    any::Any,
     fs,
-    iter::{FilterMap, Map},
     path::{Path, PathBuf},
-    process::exit,
-    string,
 };
-use toml::{ser, Table};
+use toml::Table;
 
 pub struct Project {
     pub filegroups: Vec<FileGroup>,

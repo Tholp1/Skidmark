@@ -1,14 +1,9 @@
-use std::{
-    env::Args,
-    fs,
-    path::{Path, PathBuf},
-    process::exit,
-};
+use std::{fs, path::PathBuf};
 
 use crate::{
     console::error_skid,
     projectparse::{FileIndexing, ProjectContext},
-    stringtools::{split_keep_delimiters, split_to_tokens, strings_to_tokens},
+    stringtools::split_to_tokens,
     types::{InputFile, Token},
 };
 

@@ -1,7 +1,7 @@
 // This file for implementations of short macros, im qualifying that as less than 30ish lines
 use std::process::exit;
 
-use chrono::{DateTime, Local};
+use chrono::Local;
 
 use crate::{
     console::error_skid,

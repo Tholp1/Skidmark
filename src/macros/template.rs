@@ -1,9 +1,7 @@
-use std::{fmt::format, process::exit, thread::scope};
-
 use crate::{
     console::error_skid,
-    projectparse::{FileIndexing, ProjectContext},
-    stringtools::{find_pattern, split_to_tokens, strings_to_tokens, WhitespaceChecks},
+    projectparse::ProjectContext,
+    stringtools::{find_pattern, split_to_tokens, WhitespaceChecks},
     types::{InputFile, Token},
 };
 

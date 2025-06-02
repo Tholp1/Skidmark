@@ -6,20 +6,15 @@ mod types;
 
 use console::*;
 use macros::MACRO_LIST;
-use markdown::{to_html_with_options, CompileOptions, Constructs, Options, ParseOptions};
-use projectparse::{parse_project, FileGroup, FileIndexing, ProjectContext};
+use markdown::{CompileOptions, Constructs, Options, ParseOptions};
+use projectparse::{parse_project, FileIndexing, ProjectContext};
 use std::{
-    convert, env,
-    fs::{self, File},
-    io::Write,
+    env,
+    fs::{self},
     path::PathBuf,
-    process::{exit, Output},
 };
-use stringtools::{
-    collect_arguments, collect_block, split_keep_delimiters, split_to_tokens, strings_to_tokens,
-    trim_whitespace_tokens,
-};
-use types::{InputFile, Macro, Token};
+use stringtools::{collect_arguments, collect_block, split_to_tokens, trim_whitespace_tokens};
+use types::{InputFile, Token};
 
 use crate::types::Expand;
 

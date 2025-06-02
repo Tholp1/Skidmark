@@ -1,6 +1,3 @@
-use core::fmt;
-use std::{ascii::escape_default, error, fmt::Arguments, ops::Index, process::exit, thread::sleep};
-
 use super::DELIMITERS;
 use crate::types::Token;
 
@@ -265,6 +262,7 @@ pub fn find_pattern(tokens: &[Token], pat: String) -> Option<(usize, usize)> {
     // FIXME: this fucks up when the begining of a pattern is repeated
     // ex. searching for "[[hello]]" in "[[[[hello]]" yeilds None
     // ALSO, this is a coarse search, operating on tokens only, not the characters within
+    //
     let split_pattern = split_to_tokens(pat, 0);
     let mut pattern_index: usize = 0;
     let mut token_index: usize = 0;
