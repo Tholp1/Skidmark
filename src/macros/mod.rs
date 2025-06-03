@@ -2,6 +2,8 @@ pub mod insert;
 pub mod simple_blocks;
 pub mod simple_macros;
 pub mod template;
+use crate::macros::simple_macros::macro_reminder;
+
 use super::types::Macro;
 
 use insert::macro_insert;
@@ -45,6 +47,13 @@ pub static MACRO_LIST: &'static [Macro] = &[
         has_scope: false,
         min_args: 0,
         max_args: 0,
+    },
+    Macro {
+        symbol: "reminder",
+        expansion: macro_reminder,
+        has_scope: false,
+        min_args: 1,
+        max_args: 1,
     },
     // Scoped
     Macro {

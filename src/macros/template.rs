@@ -58,7 +58,7 @@ impl SkidTemplate {
                 context,
                 origin_index,
                 origin_line,
-                format!(
+                &format!(
                     "Template \"{}\" requires exactly {} arguments, got given {} ({:?})",
                     self.symbol,
                     self.args.len(),
@@ -72,7 +72,7 @@ impl SkidTemplate {
                 context,
                 origin_index,
                 origin_line,
-                format!(
+                &format!(
                     "Template \"{}\" requires at least {} arguments, got given {} ({:?})",
                     self.symbol,
                     self.args.len(),
@@ -153,7 +153,7 @@ pub fn macro_template(
                 context,
                 origin_index,
                 origin_line,
-                format!("Attempted template redefinition of \"{}\"", args[0]),
+                &format!("Attempted template redefinition of \"{}\"", args[0]),
             );
         }
     }
@@ -164,7 +164,7 @@ pub fn macro_template(
                 context,
                 origin_index,
                 origin_line,
-                format!(
+                &format!(
                     "Attempted to make a template using a reserved name \"{}\"",
                     args[0]
                 ),
@@ -178,7 +178,7 @@ pub fn macro_template(
                 context,
                 origin_index,
                 origin_line,
-                format!(
+                &format!(
                     "Attempted to make a template using a reserved parameter name \"{}\"",
                     arg
                 ),
@@ -196,7 +196,7 @@ pub fn macro_template(
                 context,
                 origin_index,
                 origin_line,
-                format!(
+                &format!(
                     "Attempted to make a template with a parameter that contains whitespace \"{}\"",
                     param
                 ),
@@ -209,7 +209,7 @@ pub fn macro_template(
             context,
             origin_index,
             origin_line,
-            format!(
+            &format!(
                 "Template definition of \"{}\" has {} paramters but only uses {}",
                 args[0],
                 args.len() - 1,

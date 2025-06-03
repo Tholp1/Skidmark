@@ -4,7 +4,7 @@ use std::process::exit;
 use chrono::Local;
 
 use crate::{
-    console::error_skid,
+    console::{error_skid, reminder_skid},
     projectparse::{FileIndexing, ProjectContext},
     stringtools::split_to_tokens,
     types::{InputFile, Token},
@@ -38,7 +38,7 @@ pub fn macro_time(
             context,
             origin_index,
             origin_line,
-            format!(
+            &format!(
                 "Time only accepts 1 argument, got given {} ({:?})",
                 args.len(),
                 args
@@ -86,4 +86,16 @@ pub fn macro_filename_canonical(
             .into(),
         origin_index,
     );
+}
+
+pub fn macro_reminder(
+    _file: &mut InputFile,
+    origin_index: usize,
+    origin_line: usize,
+    context: &mut ProjectContext,
+    args: &Vec<String>,
+    _scope: &[Token],
+) -> Vec<Token> {
+    reminder_skid(context, origin_index, origin_line, &args[0]);
+    Vec::new()
 }

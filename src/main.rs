@@ -32,7 +32,7 @@ fn main() {
         let ok = project_folder.pop();
         if !ok {
             error_generic(
-                "No skidmark.toml project file found in this folder or ancestors.".into(),
+                &"No skidmark.toml project file found in this folder or ancestors.".into(),
             );
         }
         project_path = project_folder.clone();
@@ -126,7 +126,7 @@ fn process_file(file: &mut InputFile, convert_html: bool, context: &mut ProjectC
                                     context,
                                     file.tokens[file.working_index].template_origin,
                                     file.tokens[file.working_index].line_number,
-                                    "Malformed Block".into(),
+                                    &"Malformed Block".into(),
                                 );
                             }
                             let block: Vec<Token>;
@@ -197,7 +197,7 @@ fn process_file(file: &mut InputFile, convert_html: bool, context: &mut ProjectC
                                     context,
                                     file.tokens[file.working_index].template_origin,
                                     file.tokens[file.working_index].line_number,
-                                    "Malformed Block".into(),
+                                    &"Malformed Block".into(),
                                 );
                             }
 
@@ -251,7 +251,7 @@ fn process_file(file: &mut InputFile, convert_html: bool, context: &mut ProjectC
                     context,
                     file.tokens[file.working_index].origin_file,
                     file.tokens[file.working_index].line_number,
-                    format!(
+                    &format!(
                         "Token written as a function but no such function exists \"{}\"",
                         file.tokens[file.working_index].contents.trim()
                     ),
@@ -296,19 +296,13 @@ fn process_file(file: &mut InputFile, convert_html: bool, context: &mut ProjectC
         )
         .unwrap();
         fs::write(&file.file_out, &html_output).expect("Couldn't write output to file");
-        ok_generic(format!(
-            "\"{}\" written \n\n",
-            file.file_out
-                .to_str()
-                .unwrap_or("Couldnt Unwrap file_out name")
-        ));
     } else {
         fs::write(&file.file_out, &skid_output).expect("Couldn't write output to file");
-        ok_generic(format!(
-            "\"{}\" written \n\n",
-            file.file_out
-                .to_str()
-                .unwrap_or("Couldnt Unwrap file_out name")
-        ));
     }
+    ok_generic(&format!(
+        "\"{}\" written \n\n",
+        file.file_out
+            .to_str()
+            .unwrap_or("Couldnt Unwrap file_out name")
+    ));
 }

@@ -77,7 +77,7 @@ pub fn macro_for_each_arg(
             context,
             origin_index,
             origin_line,
-            format!(
+            &format!(
                 "Macro `for_each_arg` given block with no \"[[{}..1]]\", intentional?",
                 varname
             ),
@@ -99,7 +99,7 @@ pub fn macro_for_each_arg(
 
     if real_args.len() % replacement_count != 0 {
         error_skid(context, origin_index, origin_line,
-            format!("`for_each_var` was not given a number of arguments({}) that was a multiple of its replacement posistions({}) (got {:?})",
+            &format!("`for_each_var` was not given a number of arguments({}) that was a multiple of its replacement posistions({}) (got {:?})",
             real_args.len(),
             replacement_count,
             real_args));

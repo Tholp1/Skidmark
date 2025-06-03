@@ -66,7 +66,7 @@ impl Expand for Macro {
         scope: &[Token],
     ) -> Vec<Token> {
         if (args.len() > self.max_args) || (args.len() < self.min_args) {
-            error_skid(context, origin_index, origin_line, format!("Macro \'{}\' was given a number of arguments ({}) not in its acceptable range ({}-{})",
+            error_skid(context, origin_index, origin_line, &format!("Macro \'{}\' was given a number of arguments ({}) not in its acceptable range ({}-{})",
         self.symbol, args.len(), self.min_args, if self.max_args == usize::max_value() {"No Limit".to_string()} else {format!("{}", self.max_args)}));
             Vec::new()
         } else {

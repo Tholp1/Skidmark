@@ -19,18 +19,6 @@ pub fn macro_insert(
         .file_for_index_canonical(origin_index)
         .expect("Macro 'Insert' was given a bad origin index")
         .clone();
-    if args.len() != 1 {
-        error_skid(
-            context,
-            origin_index,
-            origin_line,
-            format!(
-                "Insert only accepts 1 argument, got given {} ({:?})",
-                args.len(),
-                args
-            ),
-        );
-    }
 
     let mut arg = args[0].clone();
     let mut search_from_root = arg.starts_with("//");
@@ -65,7 +53,7 @@ pub fn macro_insert(
     }
 
     if !ok {
-        error_skid(context, origin_index, origin_line, format!("Insert was unable to find the file \"{}\" relative to its origin or in project root.", arg));
+        error_skid(context, origin_index, origin_line, &format!("Insert was unable to find the file \"{}\" relative to its origin or in project root.", arg));
     }
 
     let mut output = fs::read_to_string(&include_file).expect("File unreadable or missing");
