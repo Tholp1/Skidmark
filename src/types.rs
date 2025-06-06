@@ -3,7 +3,7 @@ use std::path::PathBuf;
 use crate::{
     console::error_skid,
     macros::{simple_blocks::macro_comment, template::SkidTemplate},
-    projectparse::ProjectContext,
+    project::ProjectContext,
 };
 
 pub struct Token {

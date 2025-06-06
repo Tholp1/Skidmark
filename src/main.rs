@@ -1,13 +1,13 @@
 mod console;
 mod macros;
-mod projectparse;
+mod project;
 mod stringtools;
 mod types;
 
 use console::*;
 use macros::MACRO_LIST;
 use markdown::{CompileOptions, Constructs, Options, ParseOptions};
-use projectparse::{parse_project, FileIndexing, ProjectContext};
+use project::{parse_project, FileIndexing, ProjectContext};
 use std::{
     env,
     fs::{self},

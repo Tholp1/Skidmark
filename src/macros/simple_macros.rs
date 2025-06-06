@@ -5,7 +5,7 @@ use chrono::Local;
 
 use crate::{
     console::{error_skid, reminder_skid},
-    projectparse::{FileIndexing, ProjectContext},
+    project::{FileIndexing, ProjectContext},
     stringtools::split_to_tokens,
     types::{InputFile, Token},
 };
