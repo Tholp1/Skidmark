@@ -1,9 +1,11 @@
+mod args;
 mod console;
 mod macros;
 mod project;
 mod stringtools;
 mod types;
 
+use clap::Parser;
 use console::*;
 use macros::MACRO_LIST;
 use markdown::{CompileOptions, Constructs, Options, ParseOptions};
@@ -16,13 +18,15 @@ use std::{
 use stringtools::{collect_arguments, collect_block, split_to_tokens, trim_whitespace_tokens};
 use types::{InputFile, Token};
 
-use crate::types::Expand;
+use crate::{args::ProgramArgs, types::Expand};
 
 static DELIMITERS: &'static [char] = &[
     ' ', '\n', '\t', '(', ')', '{', '}', '[', ']', '<', '>', '\\', '\'', '\"', ';',
 ];
 
 fn main() {
+    // let args = ProgramArgs::parse();
+
     let mut project_folder = PathBuf::from(env::current_dir().unwrap().as_path());
 
     let mut project_path = project_folder.clone();
@@ -268,6 +272,12 @@ fn process_file(file: &mut InputFile, convert_html: bool, context: &mut ProjectC
         skid_output += &t.contents;
     }
 
+    let mut folder = file.file_skidout.clone();
+    folder.pop();
+    if fs::create_dir_all(&folder).is_err() {
+        error_generic(&format!("Could not make the folder {:?}", &folder));
+    }
+
     if convert_html {
         fs::write(&file.file_skidout, &skid_output).expect("Couldn't write skid to file");
 
@@ -287,6 +297,7 @@ fn process_file(file: &mut InputFile, convert_html: bool, context: &mut ProjectC
                 parse: ParseOptions {
                     constructs: Constructs {
                         code_indented: false,
+
                         //html_flow: false,
                         ..Constructs::gfm()
                     },
@@ -300,7 +311,7 @@ fn process_file(file: &mut InputFile, convert_html: bool, context: &mut ProjectC
         fs::write(&file.file_out, &skid_output).expect("Couldn't write output to file");
     }
     ok_generic(&format!(
-        "\"{}\" written \n\n",
+        "{} written \n\n",
         file.file_out
             .to_str()
             .unwrap_or("Couldnt Unwrap file_out name")

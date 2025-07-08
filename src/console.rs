@@ -11,11 +11,14 @@ pub fn error_generic(msg: &String) {
 
 pub fn error_skid(context: &ProjectContext, origin_index: usize, origin_line: usize, msg: &String) {
     println!(
-        "{} {:?}:{}; {}",
+        "{} {}:{}; {}",
         "[ERROR]".red(),
         context
             .file_for_index(origin_index)
-            .expect("Panic in the error func.... (file_for_index() was None!)"),
+            .expect("Panic in the error func.... (file_for_index() was None!)")
+            .into_os_string()
+            .into_string()
+            .unwrap(),
         origin_line,
         msg
     );
@@ -28,11 +31,14 @@ pub fn warn_generic(msg: &String) {
 
 pub fn warn_skid(context: &ProjectContext, origin_index: usize, origin_line: usize, msg: &String) {
     println!(
-        "{} {:?}:{}; {}",
+        "{} {}:{}; {}",
         "[WARN]".yellow(),
         context
             .file_for_index(origin_index)
-            .expect("Panic in the warn func.... (file_for_index() was None!)"),
+            .expect("Panic in the warn func.... (file_for_index() was None!)")
+            .into_os_string()
+            .into_string()
+            .unwrap(),
         origin_line,
         msg
     );
@@ -49,11 +55,14 @@ pub fn reminder_skid(
     msg: &String,
 ) {
     println!(
-        "{} {:?}:{}; {}",
+        "{} {}:{}; {}",
         "[REMINDER]".cyan(),
         context
             .file_for_index(origin_index)
-            .expect("Panic in the warn func.... (file_for_index() was None!)"),
+            .expect("Panic in the warn func.... (file_for_index() was None!)")
+            .into_os_string()
+            .into_string()
+            .unwrap(),
         origin_line,
         msg
     );
