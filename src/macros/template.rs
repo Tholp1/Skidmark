@@ -1,6 +1,7 @@
 use crate::{
     console::error_skid,
     project::ProjectContext,
+    reservednames::{RESERVED_NAMES_HTML, RESERVED_NAMES_MISC},
     stringtools::{find_pattern, split_to_tokens, WhitespaceChecks},
     types::{InputFile, Token},
 };
@@ -43,17 +44,6 @@ impl SkidTemplate {
         //println!("{:?}", args);
 
         if !self.allows_trailing_args && args.len() != self.args.len() {
-            // println!(
-            //     "[ERROR] {:?}:{}; Template \"{}\" requires exactly {} arguments, got given {} ({:?})",
-            //     context.file_for_index(origin_index).unwrap(),
-            //     origin_line,
-            //     self.symbol,
-            //     self.args.len(),
-            //     args.len(),
-            //     args
-            // );
-            // exit(1);
-
             error_skid(
                 context,
                 origin_index,
@@ -167,6 +157,34 @@ pub fn macro_template(
                 &format!(
                     "Attempted to make a template using a reserved name \"{}\"",
                     args[0]
+                ),
+            );
+        }
+    }
+
+    for r in RESERVED_NAMES_HTML {
+        if **r == args[0] {
+            error_skid(
+                context,
+                origin_index,
+                origin_line,
+                &format!(
+                    "Attempted to make a template using a reserved name \"{}\"",
+                    r
+                ),
+            );
+        }
+    }
+
+    for r in RESERVED_NAMES_MISC {
+        if **r == args[0] {
+            error_skid(
+                context,
+                origin_index,
+                origin_line,
+                &format!(
+                    "Attempted to make a template using a reserved name \"{}\"",
+                    r
                 ),
             );
         }

@@ -2,14 +2,19 @@ mod args;
 mod console;
 mod macros;
 mod project;
+mod reservednames;
 mod stringtools;
 mod types;
 
+use crate::{
+    args::ProgramArgs, project::FileGroup, reservednames::RESERVED_NAMES_MISC, types::Expand,
+};
 use clap::Parser;
 use console::*;
 use macros::MACRO_LIST;
 use markdown::{CompileOptions, Constructs, Options, ParseOptions};
 use project::{parse_project, FileIndexing, ProjectContext};
+use reservednames::RESERVED_NAMES_HTML;
 use std::{
     env,
     fs::{self},
@@ -17,8 +22,6 @@ use std::{
 };
 use stringtools::{collect_arguments, collect_block, split_to_tokens, trim_whitespace_tokens};
 use types::{InputFile, Token};
-
-use crate::{args::ProgramArgs, types::Expand};
 
 static DELIMITERS: &'static [char] = &[
     ' ', '\n', '\t', '(', ')', '{', '}', '[', ']', '<', '>', '\\', '\'', '\"', ';',
@@ -251,15 +254,41 @@ fn process_file(file: &mut InputFile, convert_html: bool, context: &mut ProjectC
                 }
             }
             if !matched_macro {
-                warn_skid(
-                    context,
-                    file.tokens[file.working_index].origin_file,
-                    file.tokens[file.working_index].line_number,
-                    &format!(
-                        "Token written as a function but no such function exists \"{}\"",
-                        file.tokens[file.working_index].contents.trim()
-                    ),
-                );
+                let name = file.tokens[file.working_index]
+                    .contents
+                    .trim()
+                    .to_lowercase();
+                let mut dont_error = name.len() <= 1;
+                {
+                    if !dont_error && convert_html {
+                        for reserved in RESERVED_NAMES_HTML {
+                            if name[1..].starts_with(reserved) {
+                                dont_error = true;
+                                break;
+                            }
+                        }
+                    }
+
+                    if !dont_error {
+                        for reserved in RESERVED_NAMES_MISC {
+                            if name[1..].starts_with(reserved) {
+                                dont_error = true;
+                                break;
+                            }
+                        }
+                    }
+                }
+                if !dont_error {
+                    warn_skid(
+                        context,
+                        file.tokens[file.working_index].origin_file,
+                        file.tokens[file.working_index].line_number,
+                        &format!(
+                            "Token written as a function but no such function exists \"{}\"",
+                            file.tokens[file.working_index].contents.trim()
+                        ),
+                    );
+                }
             }
         }
         if !matched_macro {
@@ -311,7 +340,7 @@ fn process_file(file: &mut InputFile, convert_html: bool, context: &mut ProjectC
         fs::write(&file.file_out, &skid_output).expect("Couldn't write output to file");
     }
     ok_generic(&format!(
-        "{} written \n\n",
+        "{} written",
         file.file_out
             .to_str()
             .unwrap_or("Couldnt Unwrap file_out name")
