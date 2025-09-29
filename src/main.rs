@@ -7,7 +7,8 @@ mod stringtools;
 mod types;
 
 use crate::{
-    args::ProgramArgs, project::FileGroup, reservednames::RESERVED_NAMES_MISC, types::Expand,
+    args::ProgramArgs, macros::template::SkidTemplate, project::FileGroup,
+    reservednames::RESERVED_NAMES_MISC, types::Expand,
 };
 use clap::Parser;
 use console::*;
@@ -19,6 +20,7 @@ use std::{
     env,
     fs::{self},
     path::PathBuf,
+    task::Context,
 };
 use stringtools::{collect_arguments, collect_block, split_to_tokens, trim_whitespace_tokens};
 use types::{InputFile, Token};
@@ -45,7 +47,7 @@ fn main() {
         project_path = project_folder.clone();
         project_path.push("skidmark.toml");
     }
-    println!("Operatting with {:?}", &project_path.as_os_str());
+    println!("Operatting on {:?}", &project_path.as_os_str());
     assert!(env::set_current_dir(&project_folder).is_ok());
 
     let mut project = parse_project(&project_path);
@@ -57,51 +59,71 @@ fn main() {
     }
 
     println!("Proccesing {} files.", num);
+    // for group in &mut project.filegroups {
+    //     for infile in &mut group.files {
+    //         process_skid(infile, group.convert_html, &mut project.context);
+    //     }
+    // }
+
     for group in &mut project.filegroups {
         for infile in &mut group.files {
-            process_file(infile, group.convert_html, &mut project.context);
+            let contents =
+                fs::read_to_string(&infile.file_input).expect("File unreadable or missing");
+            infile.tokens =
+                split_to_tokens(contents, project.context.index_of_file(&infile.file_input));
+
+            process_skid(
+                &mut infile.tokens,
+                project.context.index_of_file(&infile.file_input),
+                &mut project.context,
+                Vec::new(),
+            );
         }
     }
 }
 
-fn process_file(file: &mut InputFile, convert_html: bool, context: &mut ProjectContext) {
+fn process_skid(
+    tokens_in: &mut [Token],
+    file_index: usize,
+    context: &mut ProjectContext,
+    templates_base: Vec<SkidTemplate>,
+) -> Vec<Token> {
     //}, context: &mut ProjectContext) {
-    let contents = fs::read_to_string(&file.file_input).expect("File unreadable or missing");
     //println!("{}\n {}", f.filename_out, contents);
 
     //file.tokens = strings_to_tokens(split_keep_delimiters(contents), file.filename_input.clone());
-    file.tokens = split_to_tokens(contents, context.index_of_file(&file.file_input));
+
     //let mut escaped = false;
+    let mut tokens = tokens_in.to_vec();
+    let mut templates = templates_base;
 
-    while file.working_index < file.tokens.len() {
+    let mut working_index = 0;
+
+    while working_index < tokens.len() {
         //look for macros or blocks
-        //println!(">\"{}\"<", file.tokens[file.working_index].contents);
+        //println!(">\"{}\"<", tokens[working_index].contents);
 
-        if file.tokens[file.working_index].contents.len() == 0 {
-            file.working_index += 1;
+        if tokens[working_index].contents.len() == 0 {
+            working_index += 1;
             continue;
         }
 
-        if file.tokens[file.working_index].contents == "\\" {
-            file.tokens[file.working_index].contents = "".into();
-            file.working_index += 2;
+        if tokens[working_index].contents == "\\" {
+            tokens[working_index].contents = "".into();
+            working_index += 2;
             //println!("Hit backslash");
             continue;
         }
 
         let mut matched_macro: bool = false;
-        if file.tokens[file.working_index]
-            .contents
-            .starts_with(['!', '&'])
-        {
+        if tokens[working_index].contents.starts_with(['!', '&']) {
             let mut prefix_len = 1;
-            let mut symbol = file.tokens[file.working_index].contents.clone();
+            let mut symbol = tokens[working_index].contents.clone();
             symbol = symbol.trim().to_string();
 
             if symbol.len() > 2 {
                 let mut ephemeral = false;
-                let same_file = file.tokens[file.working_index].origin_file
-                    != context.index_of_file(&file.file_input);
+                let same_file = tokens[working_index].origin_file != file_index;
 
                 // Inversely Ephemeral
                 if symbol.starts_with("!&") {
@@ -119,20 +141,19 @@ fn process_file(file: &mut InputFile, convert_html: bool, context: &mut ProjectC
                         matched_macro = true;
                         //println!("Found a macro ({})", m.symbol);
 
-                        let (args, args_tokcount) =
-                            collect_arguments(&file.tokens[file.working_index..]);
+                        let (args, args_tokcount) = collect_arguments(&tokens[working_index..]);
                         let expansion: Vec<Token>;
                         let block_tokcount: usize;
                         if m.has_scope {
                             //println!("is scoped.");
 
                             let block_opt =
-                                collect_block(&file.tokens[(file.working_index + args_tokcount)..]);
+                                collect_block(&tokens[(working_index + args_tokcount)..]);
                             if block_opt.is_none() {
                                 error_skid(
                                     context,
-                                    file.tokens[file.working_index].template_origin,
-                                    file.tokens[file.working_index].line_number,
+                                    tokens[working_index].template_origin,
+                                    tokens[working_index].line_number,
                                     &"Malformed Block".into(),
                                 );
                             }
@@ -143,10 +164,10 @@ fn process_file(file: &mut InputFile, convert_html: bool, context: &mut ProjectC
                                 expansion = Vec::new();
                             } else {
                                 expansion = m.expand(
-                                    file,
-                                    file.tokens[file.working_index].origin_file,
-                                    file.tokens[file.working_index].line_number,
+                                    tokens[working_index].origin_file,
+                                    tokens[working_index].line_number,
                                     context,
+                                    &mut templates,
                                     &args,
                                     &block,
                                 );
@@ -158,10 +179,10 @@ fn process_file(file: &mut InputFile, convert_html: bool, context: &mut ProjectC
                                 expansion = Vec::new();
                             } else {
                                 expansion = m.expand(
-                                    file,
-                                    file.tokens[file.working_index].origin_file,
-                                    file.tokens[file.working_index].line_number,
+                                    tokens[working_index].origin_file,
+                                    tokens[working_index].line_number,
                                     context,
+                                    &mut templates,
                                     &args,
                                     &Vec::new()[..],
                                 );
@@ -170,40 +191,38 @@ fn process_file(file: &mut InputFile, convert_html: bool, context: &mut ProjectC
 
                         let trimmed = trim_whitespace_tokens(&expansion);
 
-                        file.tokens.remove(file.working_index);
-                        file.tokens.splice(
-                            file.working_index
-                                ..(file.working_index + args_tokcount + block_tokcount - 1),
+                        tokens.remove(working_index);
+                        tokens.splice(
+                            working_index..(working_index + args_tokcount + block_tokcount - 1),
                             trimmed.iter().cloned(),
                         );
-                        if expansion.len() == 0 && file.working_index > 0 {
-                            file.working_index -= 1;
+                        if expansion.len() == 0 && working_index > 0 {
+                            working_index -= 1;
                         }
                     }
                 }
 
                 // check for templates
                 // todo maybe deduplicate this
-                for m in &mut file.templates {
-                    if &symbol[prefix_len..] == m.symbol {
+                for t in &templates {
+                    if &symbol[prefix_len..] == t.symbol {
                         matched_macro = true;
                         //println!("Found a macro ({})", m.symbol);
 
-                        let (args, args_tokcount) =
-                            collect_arguments(&file.tokens[file.working_index..]);
+                        let (args, args_tokcount) = collect_arguments(&tokens[working_index..]);
                         let expansion: Vec<Token>;
                         let block_tokcount: usize;
 
-                        if m.has_scope {
+                        if t.has_scope {
                             //println!("is scoped.");
                             let block: Vec<Token>;
                             let block_opt =
-                                collect_block(&file.tokens[(file.working_index + args_tokcount)..]);
+                                collect_block(&tokens[(working_index + args_tokcount)..]);
                             if block_opt.is_none() {
                                 error_skid(
                                     context,
-                                    file.tokens[file.working_index].template_origin,
-                                    file.tokens[file.working_index].line_number,
+                                    tokens[working_index].template_origin,
+                                    tokens[working_index].line_number,
                                     &"Malformed Block".into(),
                                 );
                             }
@@ -213,10 +232,10 @@ fn process_file(file: &mut InputFile, convert_html: bool, context: &mut ProjectC
                             if ephemeral {
                                 expansion = Vec::new();
                             } else {
-                                expansion = m.expand(
+                                expansion = t.expand(
                                     //file,
-                                    file.tokens[file.working_index].origin_file,
-                                    file.tokens[file.working_index].line_number,
+                                    tokens[working_index].origin_file,
+                                    tokens[working_index].line_number,
                                     context,
                                     &args,
                                     &block,
@@ -228,10 +247,10 @@ fn process_file(file: &mut InputFile, convert_html: bool, context: &mut ProjectC
                             if ephemeral {
                                 expansion = Vec::new();
                             } else {
-                                expansion = m.expand(
+                                expansion = t.expand(
                                     //file,
-                                    file.tokens[file.working_index].origin_file,
-                                    file.tokens[file.working_index].line_number,
+                                    tokens[working_index].origin_file,
+                                    tokens[working_index].line_number,
                                     context,
                                     &args,
                                     &Vec::new()[..],
@@ -241,26 +260,22 @@ fn process_file(file: &mut InputFile, convert_html: bool, context: &mut ProjectC
 
                         let trimmed = trim_whitespace_tokens(&expansion);
 
-                        file.tokens.remove(file.working_index);
-                        file.tokens.splice(
-                            file.working_index
-                                ..(file.working_index + args_tokcount + block_tokcount - 1),
+                        tokens.remove(working_index);
+                        tokens.splice(
+                            working_index..(working_index + args_tokcount + block_tokcount - 1),
                             trimmed.iter().cloned(),
                         );
-                        if expansion.len() == 0 && file.working_index > 0 {
-                            file.working_index -= 1;
+                        if expansion.len() == 0 && working_index > 0 {
+                            working_index -= 1;
                         }
                     }
                 }
             }
             if !matched_macro {
-                let name = file.tokens[file.working_index]
-                    .contents
-                    .trim()
-                    .to_lowercase();
+                let name = tokens[working_index].contents.trim().to_lowercase();
                 let mut dont_error = name.len() <= 1;
                 {
-                    if !dont_error && convert_html {
+                    if !dont_error {
                         for reserved in RESERVED_NAMES_HTML {
                             if name[1..].starts_with(reserved) {
                                 dont_error = true;
@@ -281,21 +296,26 @@ fn process_file(file: &mut InputFile, convert_html: bool, context: &mut ProjectC
                 if !dont_error {
                     warn_skid(
                         context,
-                        file.tokens[file.working_index].origin_file,
-                        file.tokens[file.working_index].line_number,
+                        tokens[working_index].origin_file,
+                        tokens[working_index].line_number,
                         &format!(
                             "Token written as a function but no such function exists \"{}\"",
-                            file.tokens[file.working_index].contents.trim()
+                            tokens[working_index].contents.trim()
                         ),
                     );
                 }
             }
         }
         if !matched_macro {
-            file.working_index += 1;
+            working_index += 1;
         }
     }
-    //println!("{:?}", file.tokens);
+
+    return tokens;
+}
+
+fn write_file(file: InputFile, convert_html: bool) {
+    //println!("{:?}", tokens);
     let mut skid_output: String = "".to_string();
     for t in &file.tokens {
         skid_output += &t.contents;

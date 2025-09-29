@@ -8,7 +8,7 @@ use super::types::Macro;
 
 use insert::macro_insert;
 use simple_blocks::{macro_comment, macro_for_each_arg, macro_repeat, macro_section};
-use simple_macros::{macro_clear, macro_filename, macro_filename_canonical, macro_time};
+use simple_macros::{macro_filename, macro_filename_canonical, macro_time};
 use template::macro_template;
 
 pub static MACRO_LIST: &'static [Macro] = &[
@@ -19,13 +19,6 @@ pub static MACRO_LIST: &'static [Macro] = &[
         has_scope: false,
         min_args: 1,
         max_args: 1,
-    },
-    Macro {
-        symbol: "clear", // Clears text buffer
-        expansion: macro_clear,
-        has_scope: false,
-        min_args: 0,
-        max_args: 0,
     },
     Macro {
         symbol: "time",

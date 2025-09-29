@@ -3,7 +3,7 @@ use crate::{
     project::ProjectContext,
     reservednames::{RESERVED_NAMES_HTML, RESERVED_NAMES_MISC},
     stringtools::{find_pattern, split_to_tokens, WhitespaceChecks},
-    types::{InputFile, Token},
+    types::Token,
 };
 
 use super::MACRO_LIST;
@@ -130,14 +130,14 @@ impl SkidTemplate {
 }
 
 pub fn macro_template(
-    file: &mut InputFile,
     origin_index: usize,
     origin_line: usize,
     context: &mut ProjectContext,
+    templates: &mut Vec<SkidTemplate>,
     args: &Vec<String>,
     scope: &[Token],
 ) -> Vec<Token> {
-    for t in &file.templates {
+    for t in templates.iter().as_ref() {
         if t.symbol == args[0] {
             error_skid(
                 context,
@@ -237,7 +237,7 @@ pub fn macro_template(
     }
 
     let template = SkidTemplate::new(args[0].clone(), &args[1..], scope);
-    file.templates.push(template);
+    templates.push(template);
 
     return Vec::new();
 }

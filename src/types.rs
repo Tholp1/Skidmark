@@ -18,25 +18,29 @@ pub struct InputFile {
     pub file_skidout: PathBuf,
     pub file_out: PathBuf,
     pub tokens: Vec<Token>,
-    pub working_index: usize,
-    pub templates: Vec<SkidTemplate>,
 }
 
-type MacroExpansion =
-    fn(&mut InputFile, usize, usize, &mut ProjectContext, &Vec<String>, &[Token]) -> Vec<Token>;
+type MacroExpansion = fn(
+    usize,
+    usize,
+    &mut ProjectContext,
+    &mut Vec<SkidTemplate>,
+    &Vec<String>,
+    &[Token],
+) -> Vec<Token>;
 // (
-//     _file: &mut InputFile,
 //     origin_index: usize,
 //     origin_line: usize,
 //     context: &mut ProjectContext,
+//     templates: &mut Vec<SkidTemplate>,
 //     args: &Vec<String>,
-//     _scope: &[Token],
+//     scope: &[Token],
 // ) -> Vec<Token>
 
 pub struct Macro {
     pub symbol: &'static str,
     pub expansion: MacroExpansion,
-    pub has_scope: bool, //takes blocks of text input as well as parameters using {{...}}
+    pub has_scope: bool, //takes blocks of text input as well as parameters using [[{}]]
     pub min_args: usize,
     pub max_args: usize,
 }
@@ -44,10 +48,10 @@ pub struct Macro {
 pub trait Expand {
     fn expand(
         &self,
-        input_file: &mut InputFile,
         origin_index: usize,
         origin_line: usize,
         context: &mut ProjectContext,
+        templates: &mut Vec<SkidTemplate>,
         args: &Vec<String>,
         scope: &[Token],
     ) -> Vec<Token>;
@@ -58,10 +62,10 @@ pub trait Expand {
 impl Expand for Macro {
     fn expand(
         &self,
-        input_file: &mut InputFile,
         origin_index: usize,
         origin_line: usize,
         context: &mut ProjectContext,
+        templates: &mut Vec<SkidTemplate>,
         args: &Vec<String>,
         scope: &[Token],
     ) -> Vec<Token> {
@@ -70,7 +74,7 @@ impl Expand for Macro {
         self.symbol, args.len(), self.min_args, if self.max_args == usize::max_value() {"No Limit".to_string()} else {format!("{}", self.max_args)}));
             Vec::new()
         } else {
-            (self.expansion)(input_file, origin_index, origin_line, context, args, scope)
+            (self.expansion)(origin_index, origin_line, context, templates, args, scope)
         }
     }
 
@@ -92,8 +96,6 @@ impl InputFile {
             file_skidout: "".into(),
             file_out: "".into(),
             tokens: Vec::new(),
-            working_index: 0,
-            templates: Vec::new(),
         }
     }
 }

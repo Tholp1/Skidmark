@@ -2,16 +2,17 @@
 
 use crate::{
     console::{error_skid, warn_skid},
+    macros::template::SkidTemplate,
     project::ProjectContext,
     stringtools::{find_pattern, split_to_tokens, TokenTools},
-    types::{InputFile, Token},
+    types::Token,
 };
 
 pub fn macro_comment(
-    _file: &mut InputFile,
     _origin_index: usize,
     _origin_line: usize,
     _context: &mut ProjectContext,
+    _templates: &mut Vec<SkidTemplate>,
     _args: &Vec<String>,
     _scope: &[Token],
 ) -> Vec<Token> {
@@ -19,10 +20,10 @@ pub fn macro_comment(
 }
 
 pub fn macro_section(
-    _file: &mut InputFile,
     _origin_index: usize,
     _origin_line: usize,
     _context: &mut ProjectContext,
+    _templates: &mut Vec<SkidTemplate>,
     _args: &Vec<String>,
     scope: &[Token],
 ) -> Vec<Token> {
@@ -34,10 +35,10 @@ pub fn macro_section(
 }
 
 pub fn macro_repeat(
-    _file: &mut InputFile,
     _origin_index: usize,
     _origin_line: usize,
     _context: &mut ProjectContext,
+    _templates: &mut Vec<SkidTemplate>,
     args: &Vec<String>,
     scope: &[Token],
 ) -> Vec<Token> {
@@ -56,10 +57,10 @@ pub fn macro_repeat(
 }
 
 pub fn macro_for_each_arg(
-    _file: &mut InputFile,
     origin_index: usize,
     origin_line: usize,
     context: &mut ProjectContext,
+    _templates: &mut Vec<SkidTemplate>,
     args: &Vec<String>,
     scope: &[Token],
 ) -> Vec<Token> {

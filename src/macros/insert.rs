@@ -2,16 +2,17 @@ use std::{fs, path::PathBuf};
 
 use crate::{
     console::error_skid,
+    macros::template::SkidTemplate,
     project::{FileIndexing, ProjectContext},
     stringtools::split_to_tokens,
-    types::{InputFile, Token},
+    types::Token,
 };
 
 pub fn macro_insert(
-    _file: &mut InputFile,
     origin_index: usize,
     origin_line: usize,
     context: &mut ProjectContext,
+    _templates: &mut Vec<SkidTemplate>,
     args: &Vec<String>,
     _scope: &[Token],
 ) -> Vec<Token> {

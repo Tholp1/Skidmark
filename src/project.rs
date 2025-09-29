@@ -21,10 +21,6 @@ pub struct FileGroup {
     pub output_extention: String,
 }
 
-// pub struct ProjectSettings {
-
-// }
-
 pub struct ProjectContext {
     pub input_folder: PathBuf,
     pub output_folder: PathBuf,
@@ -32,8 +28,6 @@ pub struct ProjectContext {
     pub global_post_insert: PathBuf,
 
     pub filemap: Vec<PathBuf>, // mapped to index
-
-                               //variables later
 }
 
 macro_rules! get_table_bool_or_default {

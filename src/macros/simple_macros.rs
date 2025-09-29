@@ -5,29 +5,17 @@ use chrono::Local;
 
 use crate::{
     console::{error_skid, reminder_skid},
+    macros::template::SkidTemplate,
     project::{FileIndexing, ProjectContext},
     stringtools::split_to_tokens,
-    types::{InputFile, Token},
+    types::Token,
 };
 
-pub fn macro_clear(
-    _file: &mut InputFile,
-    _origin_index: usize,
-    _origin_line: usize,
-    _context: &mut ProjectContext,
-    _args: &Vec<String>,
-    _scope: &[Token],
-) -> Vec<Token> {
-    _file.tokens = _file.tokens.split_off(_file.working_index);
-    _file.working_index = 0;
-    return Vec::new();
-}
-
 pub fn macro_time(
-    file: &mut InputFile,
     origin_index: usize,
     origin_line: usize,
     context: &mut ProjectContext,
+    _templates: &mut Vec<SkidTemplate>,
     args: &Vec<String>,
     _scope: &[Token],
 ) -> Vec<Token> {
@@ -51,10 +39,10 @@ pub fn macro_time(
 }
 
 pub fn macro_filename(
-    _file: &mut InputFile,
     origin_index: usize,
-    _origin_line: usize,
+    origin_line: usize,
     context: &mut ProjectContext,
+    _templates: &mut Vec<SkidTemplate>,
     _args: &Vec<String>,
     _scope: &[Token],
 ) -> Vec<Token> {
@@ -70,10 +58,10 @@ pub fn macro_filename(
 }
 
 pub fn macro_filename_canonical(
-    _file: &mut InputFile,
     origin_index: usize,
     _origin_line: usize,
     context: &mut ProjectContext,
+    _templates: &mut Vec<SkidTemplate>,
     _args: &Vec<String>,
     _scope: &[Token],
 ) -> Vec<Token> {
@@ -89,10 +77,10 @@ pub fn macro_filename_canonical(
 }
 
 pub fn macro_reminder(
-    _file: &mut InputFile,
     origin_index: usize,
     origin_line: usize,
     context: &mut ProjectContext,
+    _templates: &mut Vec<SkidTemplate>,
     args: &Vec<String>,
     _scope: &[Token],
 ) -> Vec<Token> {
