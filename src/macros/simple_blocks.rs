@@ -5,14 +5,14 @@ use crate::{
     macros::template::SkidTemplate,
     project::ProjectContext,
     stringtools::{find_pattern, split_to_tokens, TokenTools},
-    types::Token,
+    types::{SkidContext, Token},
 };
 
 pub fn macro_comment(
     _origin_index: usize,
     _origin_line: usize,
     _context: &mut ProjectContext,
-    _templates: &mut Vec<SkidTemplate>,
+    _skid_context: &mut SkidContext,
     _args: &Vec<String>,
     _scope: &[Token],
 ) -> Vec<Token> {
@@ -23,7 +23,7 @@ pub fn macro_section(
     _origin_index: usize,
     _origin_line: usize,
     _context: &mut ProjectContext,
-    _templates: &mut Vec<SkidTemplate>,
+    _skid_context: &mut SkidContext,
     _args: &Vec<String>,
     scope: &[Token],
 ) -> Vec<Token> {
@@ -38,7 +38,7 @@ pub fn macro_repeat(
     _origin_index: usize,
     _origin_line: usize,
     _context: &mut ProjectContext,
-    _templates: &mut Vec<SkidTemplate>,
+    _skid_context: &mut SkidContext,
     args: &Vec<String>,
     scope: &[Token],
 ) -> Vec<Token> {
@@ -60,7 +60,7 @@ pub fn macro_for_each_arg(
     origin_index: usize,
     origin_line: usize,
     context: &mut ProjectContext,
-    _templates: &mut Vec<SkidTemplate>,
+    _skid_context: &mut SkidContext,
     args: &Vec<String>,
     scope: &[Token],
 ) -> Vec<Token> {

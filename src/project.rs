@@ -164,13 +164,16 @@ pub fn parse_project(tomlpath: &Path) -> Project {
     return project;
 }
 
-pub trait FileIndexing {
+pub trait Indexing {
     fn index_of_file(&mut self, f: &PathBuf) -> usize;
     fn file_for_index(&self, i: usize) -> Option<PathBuf>;
     fn file_for_index_canonical(&self, i: usize) -> Option<&PathBuf>;
+
+    // fn index_of_section_name(&mut self, name: String) -> usize;
+    // fn section_name_for_index(&self, index: usize) -> String;
 }
 
-impl FileIndexing for ProjectContext {
+impl Indexing for ProjectContext {
     fn index_of_file(&mut self, f: &PathBuf) -> usize {
         let cannonical = f.canonicalize().unwrap();
         let mut index = 0;

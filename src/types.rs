@@ -1,3 +1,4 @@
+use boa_engine::Context;
 use std::path::PathBuf;
 
 use crate::{
@@ -11,6 +12,7 @@ pub struct Token {
     pub origin_file: usize,
     pub template_origin: usize,
     pub line_number: usize,
+    pub section_name_index: usize,
 }
 
 pub struct InputFile {
@@ -20,14 +22,20 @@ pub struct InputFile {
     pub tokens: Vec<Token>,
 }
 
-type MacroExpansion = fn(
-    usize,
-    usize,
-    &mut ProjectContext,
-    &mut Vec<SkidTemplate>,
-    &Vec<String>,
-    &[Token],
-) -> Vec<Token>;
+pub struct SkidContext {
+    pub templates: Vec<SkidTemplate>,
+}
+
+impl SkidContext {
+    pub fn new() -> SkidContext {
+        SkidContext {
+            templates: Vec::new(),
+        }
+    }
+}
+
+type MacroExpansion =
+    fn(usize, usize, &mut ProjectContext, &mut SkidContext, &Vec<String>, &[Token]) -> Vec<Token>;
 // (
 //     origin_index: usize,
 //     origin_line: usize,
@@ -51,7 +59,7 @@ pub trait Expand {
         origin_index: usize,
         origin_line: usize,
         context: &mut ProjectContext,
-        templates: &mut Vec<SkidTemplate>,
+        skid_context: &mut SkidContext,
         args: &Vec<String>,
         scope: &[Token],
     ) -> Vec<Token>;
@@ -65,7 +73,7 @@ impl Expand for Macro {
         origin_index: usize,
         origin_line: usize,
         context: &mut ProjectContext,
-        templates: &mut Vec<SkidTemplate>,
+        skid_context: &mut SkidContext,
         args: &Vec<String>,
         scope: &[Token],
     ) -> Vec<Token> {
@@ -74,7 +82,14 @@ impl Expand for Macro {
         self.symbol, args.len(), self.min_args, if self.max_args == usize::max_value() {"No Limit".to_string()} else {format!("{}", self.max_args)}));
             Vec::new()
         } else {
-            (self.expansion)(origin_index, origin_line, context, templates, args, scope)
+            (self.expansion)(
+                origin_index,
+                origin_line,
+                context,
+                skid_context,
+                args,
+                scope,
+            )
         }
     }
 
@@ -107,6 +122,7 @@ impl Token {
             origin_file: origin_file,
             template_origin: origin_file,
             line_number: line_number,
+            section_name_index: 0,
         }
     }
 }

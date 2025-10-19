@@ -6,16 +6,16 @@ use chrono::Local;
 use crate::{
     console::{error_skid, reminder_skid},
     macros::template::SkidTemplate,
-    project::{FileIndexing, ProjectContext},
+    project::{Indexing, ProjectContext},
     stringtools::split_to_tokens,
-    types::Token,
+    types::{SkidContext, Token},
 };
 
 pub fn macro_time(
     origin_index: usize,
     origin_line: usize,
     context: &mut ProjectContext,
-    _templates: &mut Vec<SkidTemplate>,
+    _skid_context: &mut SkidContext,
     args: &Vec<String>,
     _scope: &[Token],
 ) -> Vec<Token> {
@@ -42,7 +42,7 @@ pub fn macro_filename(
     origin_index: usize,
     origin_line: usize,
     context: &mut ProjectContext,
-    _templates: &mut Vec<SkidTemplate>,
+    _skid_context: &mut SkidContext,
     _args: &Vec<String>,
     _scope: &[Token],
 ) -> Vec<Token> {
@@ -61,7 +61,7 @@ pub fn macro_filename_canonical(
     origin_index: usize,
     _origin_line: usize,
     context: &mut ProjectContext,
-    _templates: &mut Vec<SkidTemplate>,
+    _skid_context: &mut SkidContext,
     _args: &Vec<String>,
     _scope: &[Token],
 ) -> Vec<Token> {
@@ -80,7 +80,7 @@ pub fn macro_reminder(
     origin_index: usize,
     origin_line: usize,
     context: &mut ProjectContext,
-    _templates: &mut Vec<SkidTemplate>,
+    _skid_context: &mut SkidContext,
     args: &Vec<String>,
     _scope: &[Token],
 ) -> Vec<Token> {

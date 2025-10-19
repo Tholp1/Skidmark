@@ -4,6 +4,7 @@ version = "0.1.0-ALPHA"
 edition = "2021"
 
 [dependencies]
+boa_engine = "0.20.0"
 chrono = "0.4.41"
 clap = { version = "4.5.40", features = ["derive"] }
 colored = "3.0.0"

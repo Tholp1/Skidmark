@@ -1,4 +1,5 @@
 mod args;
+mod closures;
 mod console;
 mod macros;
 mod project;
@@ -7,14 +8,18 @@ mod stringtools;
 mod types;
 
 use crate::{
-    args::ProgramArgs, macros::template::SkidTemplate, project::FileGroup,
-    reservednames::RESERVED_NAMES_MISC, types::Expand,
+    args::ProgramArgs,
+    closures::CLOSURE_LIST,
+    macros::template::SkidTemplate,
+    project::FileGroup,
+    reservednames::RESERVED_NAMES_MISC,
+    types::{Expand, SkidContext},
 };
 use clap::Parser;
 use console::*;
 use macros::MACRO_LIST;
 use markdown::{CompileOptions, Constructs, Options, ParseOptions};
-use project::{parse_project, FileIndexing, ProjectContext};
+use project::{parse_project, Indexing, ProjectContext};
 use reservednames::RESERVED_NAMES_HTML;
 use std::{
     env,
@@ -25,8 +30,10 @@ use std::{
 use stringtools::{collect_arguments, collect_block, split_to_tokens, trim_whitespace_tokens};
 use types::{InputFile, Token};
 
+// really need to change this whole thing to work with characters rather than
+// strings split on kind of abitrary chars..
 static DELIMITERS: &'static [char] = &[
-    ' ', '\n', '\t', '(', ')', '{', '}', '[', ']', '<', '>', '\\', '\'', '\"', ';',
+    ' ', '\n', '\t', '(', ')', '{', '}', '[', ']', '<', '>', '\\', '\'', '\"', ';', '?', '^', '-',
 ];
 
 fn main() {
@@ -72,11 +79,12 @@ fn main() {
             infile.tokens =
                 split_to_tokens(contents, project.context.index_of_file(&infile.file_input));
 
+            let mut skid_context = SkidContext::new();
             process_skid(
                 &mut infile.tokens,
                 project.context.index_of_file(&infile.file_input),
                 &mut project.context,
-                Vec::new(),
+                &mut skid_context,
             );
         }
     }
@@ -86,7 +94,7 @@ fn process_skid(
     tokens_in: &mut [Token],
     file_index: usize,
     context: &mut ProjectContext,
-    templates_base: Vec<SkidTemplate>,
+    skid_context: &mut SkidContext,
 ) -> Vec<Token> {
     //}, context: &mut ProjectContext) {
     //println!("{}\n {}", f.filename_out, contents);
@@ -95,7 +103,7 @@ fn process_skid(
 
     //let mut escaped = false;
     let mut tokens = tokens_in.to_vec();
-    let mut templates = templates_base;
+    let mut starting_template_count = skid_context.templates.len();
 
     let mut working_index = 0;
 
@@ -167,7 +175,7 @@ fn process_skid(
                                     tokens[working_index].origin_file,
                                     tokens[working_index].line_number,
                                     context,
-                                    &mut templates,
+                                    skid_context,
                                     &args,
                                     &block,
                                 );
@@ -182,7 +190,7 @@ fn process_skid(
                                     tokens[working_index].origin_file,
                                     tokens[working_index].line_number,
                                     context,
-                                    &mut templates,
+                                    skid_context,
                                     &args,
                                     &Vec::new()[..],
                                 );
@@ -204,7 +212,7 @@ fn process_skid(
 
                 // check for templates
                 // todo maybe deduplicate this
-                for t in &templates {
+                for t in &skid_context.templates {
                     if &symbol[prefix_len..] == t.symbol {
                         matched_macro = true;
                         //println!("Found a macro ({})", m.symbol);
@@ -306,11 +314,21 @@ fn process_skid(
                 }
             }
         }
+
+        // Not a macro or template, look through our closures
+        // for c in CLOSURE_LIST
+        // {
+        //     if tokens[working_index].contents.starts_with(c.opener)
+        //     {
+
+        //     }
+        // }
+
         if !matched_macro {
             working_index += 1;
         }
     }
-
+    skid_context.templates.truncate(starting_template_count);
     return tokens;
 }
 

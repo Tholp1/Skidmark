@@ -3,7 +3,7 @@ use crate::{
     project::ProjectContext,
     reservednames::{RESERVED_NAMES_HTML, RESERVED_NAMES_MISC},
     stringtools::{find_pattern, split_to_tokens, WhitespaceChecks},
-    types::Token,
+    types::{SkidContext, Token},
 };
 
 use super::MACRO_LIST;
@@ -37,7 +37,7 @@ impl SkidTemplate {
         //_file: &mut InputFile,
         origin_index: usize,
         origin_line: usize,
-        context: &mut ProjectContext,
+        project_context: &mut ProjectContext,
         args: &Vec<String>,
         scope: &[Token],
     ) -> Vec<Token> {
@@ -45,7 +45,7 @@ impl SkidTemplate {
 
         if !self.allows_trailing_args && args.len() != self.args.len() {
             error_skid(
-                context,
+                project_context,
                 origin_index,
                 origin_line,
                 &format!(
@@ -59,7 +59,7 @@ impl SkidTemplate {
         }
         if self.allows_trailing_args && args.len() < self.args.len() {
             error_skid(
-                context,
+                project_context,
                 origin_index,
                 origin_line,
                 &format!(
@@ -132,15 +132,15 @@ impl SkidTemplate {
 pub fn macro_template(
     origin_index: usize,
     origin_line: usize,
-    context: &mut ProjectContext,
-    templates: &mut Vec<SkidTemplate>,
+    project_context: &mut ProjectContext,
+    skid_context: &mut SkidContext,
     args: &Vec<String>,
     scope: &[Token],
 ) -> Vec<Token> {
-    for t in templates.iter().as_ref() {
+    for t in skid_context.templates.iter().as_ref() {
         if t.symbol == args[0] {
             error_skid(
-                context,
+                project_context,
                 origin_index,
                 origin_line,
                 &format!("Attempted template redefinition of \"{}\"", args[0]),
@@ -151,7 +151,7 @@ pub fn macro_template(
     for t in MACRO_LIST {
         if t.symbol == args[0] {
             error_skid(
-                context,
+                project_context,
                 origin_index,
                 origin_line,
                 &format!(
@@ -165,7 +165,7 @@ pub fn macro_template(
     for r in RESERVED_NAMES_HTML {
         if **r == args[0] {
             error_skid(
-                context,
+                project_context,
                 origin_index,
                 origin_line,
                 &format!(
@@ -179,7 +179,7 @@ pub fn macro_template(
     for r in RESERVED_NAMES_MISC {
         if **r == args[0] {
             error_skid(
-                context,
+                project_context,
                 origin_index,
                 origin_line,
                 &format!(
@@ -193,7 +193,7 @@ pub fn macro_template(
     for arg in args {
         if arg == ".." || arg == "\"..\"" {
             error_skid(
-                context,
+                project_context,
                 origin_index,
                 origin_line,
                 &format!(
@@ -211,7 +211,7 @@ pub fn macro_template(
         }
         if param.contains_whitespace() {
             error_skid(
-                context,
+                project_context,
                 origin_index,
                 origin_line,
                 &format!(
@@ -224,7 +224,7 @@ pub fn macro_template(
 
     if used_params < args.len() - 1 {
         error_skid(
-            context,
+            project_context,
             origin_index,
             origin_line,
             &format!(
@@ -237,7 +237,7 @@ pub fn macro_template(
     }
 
     let template = SkidTemplate::new(args[0].clone(), &args[1..], scope);
-    templates.push(template);
+    skid_context.templates.push(template);
 
     return Vec::new();
 }

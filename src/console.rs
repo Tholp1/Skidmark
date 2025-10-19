@@ -2,7 +2,7 @@ use std::process::exit;
 
 use colored::Colorize;
 
-use crate::project::{FileIndexing, ProjectContext};
+use crate::project::{Indexing, ProjectContext};
 
 pub fn error_generic(msg: &String) {
     println!("{} {}", "[ERROR]".red(), msg);
