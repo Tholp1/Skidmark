@@ -1,58 +1,69 @@
 use super::DELIMITERS;
 use crate::types::Token;
 
-pub fn collect_arguments(tokens: &[Token]) -> (Vec<String>, usize) {
-    // Arguments vec and number of tokens consumed
+pub fn collect_arguments(tokens: &[Token]) -> Option<(Vec<String>, usize)> {
+    // Returns arguments vec and number of tokens to be consumed
     //let mut output = Vec::new();
-    let mut split_tokens = Vec::new();
-    for tok in tokens {
-        for s in split_keep_delimiters(tok.contents.clone()) {
-            split_tokens.push(s);
-        }
-    }
 
     let mut quoted: bool = false;
+    let mut escaped: bool = false;
     let mut entered: bool = false;
     let mut arg = "".to_string();
     let mut args: Vec<String> = Vec::new();
 
     let mut in_token_count = 0;
+    let mut exited_cleanly = false;
 
-    for tok in split_tokens {
-        in_token_count += 1; // This could be a problem if it something got split above..
-        if tok.starts_with([' ', '\t']) && !quoted {
+    for tok in tokens {
+        let c = tok.contents;
+
+        in_token_count += 1;
+        if c.is_whitespace() && !entered {
             continue;
         }
 
-        if !entered && tok.starts_with('(') {
+        if !entered && c == '(' {
             entered = true;
             continue;
         }
 
         if !entered {
-            continue;
-        }
-
-        if !quoted && tok.starts_with(')') {
             break;
         }
 
-        for c in tok.chars() {
-            if c == '\"' {
-                quoted = !quoted;
-                continue;
+        if !quoted && tok.contents == ')' {
+            exited_cleanly = true;
+            if !arg.is_empty() {
+                args.push(arg.clone());
+                arg.clear();
             }
-
-            arg.push(c);
+            break;
         }
 
-        if !quoted {
-            args.push(arg.clone());
-            arg.clear();
+        if c == '\"' && !escaped {
+            quoted = !quoted;
+            continue;
         }
+
+        if c == '\\' && !escaped {
+            escaped = true;
+            continue;
+        }
+
+        if c.is_whitespace() && !quoted {
+            if !arg.is_empty() {
+                args.push(arg.clone());
+                arg.clear();
+            }
+            continue;
+        }
+        arg.push(c);
     }
 
-    return (args, in_token_count);
+    if !entered || !exited_cleanly {
+        return None;
+    }
+    return Some((args, in_token_count));
 }
 
 pub fn collect_block(tokens: &[Token]) -> Option<(Vec<Token>, usize)> {
@@ -67,14 +78,14 @@ pub fn collect_block(tokens: &[Token]) -> Option<(Vec<Token>, usize)> {
 
     // We dont really care about doing anything that in the block right now
     // maybe have the Token struct contain scope level later?
-    let mut escaped_tok: Token = Token::new("\\".into(), 0, 0);
+    let mut escaped_tok: Token = Token::new('\\', 0, 0);
     for tok in tokens {
         tokens_consumed += 1;
         if !entered {
-            if tok.contents.is_only_whitespace() {
+            if tok.contents.is_whitespace() {
                 continue;
             }
-            if tok.contents != "{"
+            if tok.contents != '{'
             // Expected block start, got garbage
             {
                 // println!("Expected block start, got {}",tok.contents);
@@ -90,7 +101,7 @@ pub fn collect_block(tokens: &[Token]) -> Option<(Vec<Token>, usize)> {
         let mut escaped_used = false;
 
         // Scope Start
-        if tok.contents == "{" && !escaped {
+        if tok.contents == '{' && !escaped {
             entering_bracket_count += 1;
 
             if entering_bracket_count == 3 {
@@ -107,7 +118,7 @@ pub fn collect_block(tokens: &[Token]) -> Option<(Vec<Token>, usize)> {
             }
         }
         // Scope End
-        if tok.contents == "}" && !escaped {
+        if tok.contents == '}' && !escaped {
             exiting_bracket_count += 1;
             if exiting_bracket_count == 3 {
                 scope_count -= 1;
@@ -128,7 +139,7 @@ pub fn collect_block(tokens: &[Token]) -> Option<(Vec<Token>, usize)> {
             block.push(escaped_tok.clone());
         }
 
-        if tok.contents == "\\" {
+        if tok.contents == '\\' {
             escaped = true;
             escaped_tok = tok.clone();
         } else {
@@ -183,18 +194,16 @@ pub fn strings_to_tokens(in_strings: Vec<String>, origin_file: usize) -> Vec<Tok
     let mut line_count = 1;
 
     for str in in_strings {
-        if str.len() == 0 {
-            continue;
-        }
-
-        let current_line = line_count;
-        for char in str.chars() {
-            if char == '\n' {
-                line_count += 1;
+        for c in str.chars() {
+            let current_line = line_count;
+            for char in str.chars() {
+                if char == '\n' {
+                    line_count += 1;
+                }
             }
+            let token: Token = Token::new(c, origin_file, current_line);
+            tokens.push(token);
         }
-        let token: Token = Token::new(str, origin_file, current_line);
-        tokens.push(token);
     }
 
     return tokens;
@@ -226,14 +235,14 @@ pub fn split_to_tokens(instr: String, origin_file: usize) -> Vec<Token> {
     return strings_to_tokens(new_split, origin_file);
 }
 
-pub fn next_nonwhitespace_token(tokens: &Vec<Token>, index: usize) -> (bool, usize) {
+pub fn next_nonwhitespace_token(tokens: &Vec<Token>, index: usize) -> Option<usize> {
     while index < tokens.len() {
-        if tokens[index].contents.is_only_whitespace() {
+        if tokens[index].contents.is_whitespace() {
             continue;
         }
-        return (true, index);
+        return Some(index);
     }
-    return (false, 0);
+    return None;
 }
 
 //trim whitespace from the ends
@@ -241,14 +250,14 @@ pub fn trim_whitespace_tokens(tokens: &[Token]) -> &[Token] {
     let mut start: usize = 0;
     let mut end: usize = tokens.len();
     for tok in tokens {
-        if !tok.contents.is_only_whitespace() {
+        if !tok.contents.is_whitespace() {
             break;
         }
         start = start + 1;
     }
 
     for tok in tokens.iter().rev() {
-        if !tok.contents.is_only_whitespace() {
+        if !tok.contents.is_whitespace() {
             break;
         }
         end = end - 1;

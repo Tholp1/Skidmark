@@ -3,7 +3,7 @@ use crate::{
     project::ProjectContext,
     reservednames::{RESERVED_NAMES_HTML, RESERVED_NAMES_MISC},
     stringtools::{find_pattern, split_to_tokens, WhitespaceChecks},
-    types::{SkidContext, Token},
+    types::{IsScoped, SkidContext, Token},
 };
 
 use super::MACRO_LIST;
@@ -31,13 +31,12 @@ impl SkidTemplate {
             allows_trailing_args: trailing,
         }
     }
-
     pub fn expand(
         &self,
         //_file: &mut InputFile,
         origin_index: usize,
         origin_line: usize,
-        project_context: &mut ProjectContext,
+        proj_context: &mut ProjectContext,
         args: &Vec<String>,
         scope: &[Token],
     ) -> Vec<Token> {
@@ -45,7 +44,7 @@ impl SkidTemplate {
 
         if !self.allows_trailing_args && args.len() != self.args.len() {
             error_skid(
-                project_context,
+                proj_context,
                 origin_index,
                 origin_line,
                 &format!(
@@ -59,7 +58,7 @@ impl SkidTemplate {
         }
         if self.allows_trailing_args && args.len() < self.args.len() {
             error_skid(
-                project_context,
+                proj_context,
                 origin_index,
                 origin_line,
                 &format!(
@@ -75,7 +74,7 @@ impl SkidTemplate {
         let mut output = self.tokens.clone();
 
         for tok in &mut output {
-            tok.origin_file = origin_index;
+            tok.origin_index = origin_index;
         }
 
         let mut args_index: usize = 0;
@@ -126,6 +125,12 @@ impl SkidTemplate {
         }
 
         output
+    }
+}
+
+impl IsScoped for SkidTemplate {
+    fn is_scoped(&self) -> bool {
+        self.has_scope
     }
 }
 

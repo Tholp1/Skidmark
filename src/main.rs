@@ -8,14 +8,11 @@ mod stringtools;
 mod types;
 
 use crate::{
-    args::ProgramArgs,
-    closures::CLOSURE_LIST,
-    macros::template::SkidTemplate,
-    project::FileGroup,
     reservednames::RESERVED_NAMES_MISC,
-    types::{Expand, SkidContext},
+    stringtools::TokenTools,
+    types::{IsScoped, MacroExpand, SkidContext},
 };
-use clap::Parser;
+
 use console::*;
 use macros::MACRO_LIST;
 use markdown::{CompileOptions, Constructs, Options, ParseOptions};
@@ -25,9 +22,8 @@ use std::{
     env,
     fs::{self},
     path::PathBuf,
-    task::Context,
 };
-use stringtools::{collect_arguments, collect_block, split_to_tokens, trim_whitespace_tokens};
+use stringtools::{collect_arguments, collect_block, split_to_tokens};
 use types::{InputFile, Token};
 
 // really need to change this whole thing to work with characters rather than
@@ -35,6 +31,13 @@ use types::{InputFile, Token};
 static DELIMITERS: &'static [char] = &[
     ' ', '\n', '\t', '(', ')', '{', '}', '[', ']', '<', '>', '\\', '\'', '\"', ';', '?', '^', '-',
 ];
+
+#[derive(PartialEq)]
+enum EphemeralType {
+    Normal,
+    Ephemeral,
+    InverseEphemeral,
+}
 
 fn main() {
     // let args = ProgramArgs::parse();
@@ -73,27 +76,219 @@ fn main() {
     // }
 
     for group in &mut project.filegroups {
+        if !group.process {
+            continue;
+        }
         for infile in &mut group.files {
             let contents =
                 fs::read_to_string(&infile.file_input).expect("File unreadable or missing");
-            infile.tokens =
+            let tokens =
                 split_to_tokens(contents, project.context.index_of_file(&infile.file_input));
 
-            let mut skid_context = SkidContext::new();
-            process_skid(
-                &mut infile.tokens,
-                project.context.index_of_file(&infile.file_input),
-                &mut project.context,
-                &mut skid_context,
+            let mut skid_context =
+                SkidContext::new(project.context.index_of_file(&infile.file_input));
+            write_file(
+                infile,
+                group.convert_html,
+                &process_skid(&tokens, &mut project.context, &mut skid_context),
             );
         }
     }
 }
 
+fn find_and_run_macro(
+    tokens_in: &[Token],
+    proj_context: &mut ProjectContext,
+    skid_context: &mut SkidContext,
+) -> Option<(Vec<Token>, usize)> {
+    // (Output, to be consumed size)
+
+    // At this point we think its a macro (starts with ! or &) so check which, we have the rest of the file
+    let ephemeral_type: EphemeralType;
+    if tokens_in.len() < 2 {
+        return None;
+    }
+
+    if tokens_in[0] == '!' && tokens_in[1] == '&' {
+        ephemeral_type = EphemeralType::InverseEphemeral;
+    } else if tokens_in[0] == '!' {
+        ephemeral_type = EphemeralType::Normal;
+    } else if tokens_in[0] == '&' {
+        ephemeral_type = EphemeralType::Ephemeral;
+    } else {
+        return None;
+    }
+
+    let mut chars_consumed = if ephemeral_type == EphemeralType::InverseEphemeral {
+        2
+    } else {
+        1
+    };
+    // Look for name
+    let mut symbol: String = "".into();
+    for tok in &tokens_in[chars_consumed..] {
+        if tok.contents.is_whitespace() || DELIMITERS.contains(&tok.contents) {
+            break;
+        }
+        symbol.push(tok.contents);
+        chars_consumed += 1;
+    }
+
+    if symbol.is_empty() {
+        return None;
+    }
+
+    let args;
+    let block;
+
+    {
+        let mut expander: &dyn IsScoped = &MACRO_LIST[0]; // assinging because it complains about possibly being empty later even if not the case
+        let mut found = false;
+        // Check if its a macro
+        for m in MACRO_LIST {
+            if m.symbol == symbol {
+                found = true;
+                expander = m;
+                break;
+            }
+        }
+
+        // Not a macro check templates
+        if !found {
+            for t in &skid_context.templates {
+                if t.symbol == symbol {
+                    found = true;
+                    expander = t;
+                    break;
+                }
+            }
+        }
+
+        // Not a template either, see if its reserved or not to see if we should say something
+        if !found {
+            let name = symbol.to_lowercase();
+            let mut dont_error = false;
+
+            for reserved in RESERVED_NAMES_HTML {
+                if name.starts_with(reserved) {
+                    dont_error = true;
+                    break;
+                }
+            }
+
+            if !dont_error {
+                for reserved in RESERVED_NAMES_MISC {
+                    if name.starts_with(reserved) {
+                        dont_error = true;
+                        break;
+                    }
+                }
+            }
+
+            if !dont_error {
+                warn_skid(
+                    &proj_context,
+                    tokens_in[0].origin_index,
+                    tokens_in[0].origin_line,
+                    &format!("No such macro or defined template \"{symbol}\""),
+                );
+            }
+            return None;
+        }
+
+        let args_result = collect_arguments(&tokens_in[chars_consumed..]);
+        if args_result.is_none() {
+            error_skid(
+                proj_context,
+                tokens_in[0].origin_index,
+                tokens_in[0].origin_line,
+                &format!("Didnt find any arguments for macro \"{symbol}\"."),
+            );
+            return None;
+        }
+
+        let consumed_by_args;
+        (args, consumed_by_args) = args_result.unwrap();
+        chars_consumed += consumed_by_args;
+
+        if expander.is_scoped() {
+            let block_result = collect_block(&tokens_in[chars_consumed..]);
+            if block_result.is_none() {
+                error_skid(
+                    proj_context,
+                    tokens_in[0].origin_index,
+                    tokens_in[0].origin_line,
+                    &format!("Didnt find a block for macro \"{symbol}\"."),
+                );
+                return None;
+            }
+            let consumed_by_block;
+            (block, consumed_by_block) = block_result.unwrap();
+            chars_consumed += consumed_by_block;
+        } else {
+            block = Vec::new();
+        }
+    }
+
+    let return_empty: bool;
+
+    match ephemeral_type {
+        EphemeralType::Normal => return_empty = false,
+        EphemeralType::Ephemeral => {
+            return_empty = skid_context.file_index != tokens_in[0].origin_index
+        }
+        EphemeralType::InverseEphemeral => {
+            return_empty = skid_context.file_index == tokens_in[0].origin_index
+        }
+    }
+
+    if return_empty {
+        return Some((Vec::new(), chars_consumed));
+    } else {
+        // we have to find it again because of borrower
+        for m in MACRO_LIST {
+            if m.symbol == symbol {
+                return Some((
+                    m.expand(
+                        tokens_in[0].origin_index,
+                        tokens_in[0].origin_line,
+                        proj_context,
+                        skid_context,
+                        &args,
+                        &block,
+                    )
+                    .trim_whitespace()
+                    .to_vec(),
+                    chars_consumed,
+                ));
+            }
+        }
+        let mut i = 0;
+        while i < skid_context.templates.len() {
+            if skid_context.templates[i].symbol == symbol {
+                return Some((
+                    skid_context.templates[i]
+                        .expand(
+                            tokens_in[0].origin_index,
+                            tokens_in[0].origin_line,
+                            proj_context,
+                            &args,
+                            &block,
+                        )
+                        .trim_whitespace()
+                        .to_vec(),
+                    chars_consumed,
+                ));
+            }
+            i += 1;
+        }
+    }
+    None
+}
+
 fn process_skid(
-    tokens_in: &mut [Token],
-    file_index: usize,
-    context: &mut ProjectContext,
+    tokens_in: &[Token],
+    proj_context: &mut ProjectContext,
     skid_context: &mut SkidContext,
 ) -> Vec<Token> {
     //}, context: &mut ProjectContext) {
@@ -103,215 +298,36 @@ fn process_skid(
 
     //let mut escaped = false;
     let mut tokens = tokens_in.to_vec();
-    let mut starting_template_count = skid_context.templates.len();
+    let starting_template_count = skid_context.templates.len();
 
+    let mut escaped = false;
     let mut working_index = 0;
 
     while working_index < tokens.len() {
-        //look for macros or blocks
-        //println!(">\"{}\"<", tokens[working_index].contents);
-
-        if tokens[working_index].contents.len() == 0 {
+        if tokens[working_index] == '\\' && !escaped {
+            tokens[working_index].contents = '\0'; // skip over this later when outputting to avoid shifting memory rn
+            escaped = true;
             working_index += 1;
-            continue;
-        }
 
-        if tokens[working_index].contents == "\\" {
-            tokens[working_index].contents = "".into();
-            working_index += 2;
-            //println!("Hit backslash");
-            continue;
-        }
-
-        let mut matched_macro: bool = false;
-        if tokens[working_index].contents.starts_with(['!', '&']) {
-            let mut prefix_len = 1;
-            let mut symbol = tokens[working_index].contents.clone();
-            symbol = symbol.trim().to_string();
-
-            if symbol.len() > 2 {
-                let mut ephemeral = false;
-                let same_file = tokens[working_index].origin_file != file_index;
-
-                // Inversely Ephemeral
-                if symbol.starts_with("!&") {
-                    prefix_len = 2;
-                    ephemeral = !same_file;
-                }
-                // Ephemeral
-                else if symbol.starts_with("&") {
-                    ephemeral = same_file;
-                }
-
-                // Check if its a macro
-                for m in MACRO_LIST {
-                    if &symbol[prefix_len..] == m.symbol {
-                        matched_macro = true;
-                        //println!("Found a macro ({})", m.symbol);
-
-                        let (args, args_tokcount) = collect_arguments(&tokens[working_index..]);
-                        let expansion: Vec<Token>;
-                        let block_tokcount: usize;
-                        if m.has_scope {
-                            //println!("is scoped.");
-
-                            let block_opt =
-                                collect_block(&tokens[(working_index + args_tokcount)..]);
-                            if block_opt.is_none() {
-                                error_skid(
-                                    context,
-                                    tokens[working_index].template_origin,
-                                    tokens[working_index].line_number,
-                                    &"Malformed Block".into(),
-                                );
-                            }
-                            let block: Vec<Token>;
-                            (block, block_tokcount) = block_opt.unwrap();
-
-                            if ephemeral {
-                                expansion = Vec::new();
-                            } else {
-                                expansion = m.expand(
-                                    tokens[working_index].origin_file,
-                                    tokens[working_index].line_number,
-                                    context,
-                                    skid_context,
-                                    &args,
-                                    &block,
-                                );
-                            }
-                        } else {
-                            block_tokcount = 0;
-
-                            if ephemeral {
-                                expansion = Vec::new();
-                            } else {
-                                expansion = m.expand(
-                                    tokens[working_index].origin_file,
-                                    tokens[working_index].line_number,
-                                    context,
-                                    skid_context,
-                                    &args,
-                                    &Vec::new()[..],
-                                );
-                            }
-                        }
-
-                        let trimmed = trim_whitespace_tokens(&expansion);
-
-                        tokens.remove(working_index);
-                        tokens.splice(
-                            working_index..(working_index + args_tokcount + block_tokcount - 1),
-                            trimmed.iter().cloned(),
-                        );
-                        if expansion.len() == 0 && working_index > 0 {
-                            working_index -= 1;
-                        }
-                    }
-                }
-
-                // check for templates
-                // todo maybe deduplicate this
-                for t in &skid_context.templates {
-                    if &symbol[prefix_len..] == t.symbol {
-                        matched_macro = true;
-                        //println!("Found a macro ({})", m.symbol);
-
-                        let (args, args_tokcount) = collect_arguments(&tokens[working_index..]);
-                        let expansion: Vec<Token>;
-                        let block_tokcount: usize;
-
-                        if t.has_scope {
-                            //println!("is scoped.");
-                            let block: Vec<Token>;
-                            let block_opt =
-                                collect_block(&tokens[(working_index + args_tokcount)..]);
-                            if block_opt.is_none() {
-                                error_skid(
-                                    context,
-                                    tokens[working_index].template_origin,
-                                    tokens[working_index].line_number,
-                                    &"Malformed Block".into(),
-                                );
-                            }
-
-                            (block, block_tokcount) = block_opt.unwrap();
-
-                            if ephemeral {
-                                expansion = Vec::new();
-                            } else {
-                                expansion = t.expand(
-                                    //file,
-                                    tokens[working_index].origin_file,
-                                    tokens[working_index].line_number,
-                                    context,
-                                    &args,
-                                    &block,
-                                );
-                            }
-                        } else {
-                            block_tokcount = 0;
-
-                            if ephemeral {
-                                expansion = Vec::new();
-                            } else {
-                                expansion = t.expand(
-                                    //file,
-                                    tokens[working_index].origin_file,
-                                    tokens[working_index].line_number,
-                                    context,
-                                    &args,
-                                    &Vec::new()[..],
-                                );
-                            }
-                        }
-
-                        let trimmed = trim_whitespace_tokens(&expansion);
-
-                        tokens.remove(working_index);
-                        tokens.splice(
-                            working_index..(working_index + args_tokcount + block_tokcount - 1),
-                            trimmed.iter().cloned(),
-                        );
-                        if expansion.len() == 0 && working_index > 0 {
-                            working_index -= 1;
-                        }
-                    }
-                }
+            // bit of a hack for reverse ephemeral escaping behavior to be the same as previously
+            if tokens.len() > working_index + 1
+                && tokens[working_index] == '!'
+                && tokens[working_index + 1] == '&'
+            {
+                working_index += 1;
             }
-            if !matched_macro {
-                let name = tokens[working_index].contents.trim().to_lowercase();
-                let mut dont_error = name.len() <= 1;
-                {
-                    if !dont_error {
-                        for reserved in RESERVED_NAMES_HTML {
-                            if name[1..].starts_with(reserved) {
-                                dont_error = true;
-                                break;
-                            }
-                        }
-                    }
+            continue;
+        }
 
-                    if !dont_error {
-                        for reserved in RESERVED_NAMES_MISC {
-                            if name[1..].starts_with(reserved) {
-                                dont_error = true;
-                                break;
-                            }
-                        }
-                    }
-                }
-                if !dont_error {
-                    warn_skid(
-                        context,
-                        tokens[working_index].origin_file,
-                        tokens[working_index].line_number,
-                        &format!(
-                            "Token written as a function but no such function exists \"{}\"",
-                            tokens[working_index].contents.trim()
-                        ),
-                    );
-                }
+        if (tokens[working_index] == '!' || tokens[working_index] == '&') && !escaped {
+            let expansion =
+                find_and_run_macro(&tokens[working_index..], proj_context, skid_context);
+            if expansion.is_some() {
+                tokens.splice(
+                    working_index..working_index + expansion.as_ref().unwrap().1,
+                    expansion.unwrap().0,
+                );
+                continue;
             }
         }
 
@@ -324,19 +340,22 @@ fn process_skid(
         //     }
         // }
 
-        if !matched_macro {
-            working_index += 1;
-        }
+        working_index += 1;
+
+        escaped = false;
     }
     skid_context.templates.truncate(starting_template_count);
+
+    tokens.retain(|t| t.contents != '\0');
+
     return tokens;
 }
 
-fn write_file(file: InputFile, convert_html: bool) {
+fn write_file(file: &InputFile, convert_html: bool, tokens: &[Token]) {
     //println!("{:?}", tokens);
     let mut skid_output: String = "".to_string();
-    for t in &file.tokens {
-        skid_output += &t.contents;
+    for t in tokens {
+        skid_output.push(t.contents);
     }
 
     let mut folder = file.file_skidout.clone();

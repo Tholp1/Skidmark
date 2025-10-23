@@ -18,7 +18,6 @@ pub struct FileGroup {
     pub post_insert: PathBuf,
     pub process: bool,
     pub convert_html: bool,
-    pub output_extention: String,
 }
 
 pub struct ProjectContext {
@@ -128,7 +127,6 @@ pub fn parse_project(tomlpath: &Path) -> Project {
             post_insert: post_insert.into(),
             process,
             convert_html,
-            output_extention: extention.into(),
         };
 
         if filegroup_def.contains_key("files") {
