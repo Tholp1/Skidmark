@@ -8,7 +8,13 @@ use toml::Table;
 pub struct Project {
     pub filegroups: Vec<FileGroup>,
     //pub settings: ProjectSettings,
-    pub context: ProjectContext,
+    //pub context: ProjectContext,
+    pub input_folder: PathBuf,
+    pub output_folder: PathBuf,
+    pub global_pre_insert: PathBuf,
+    pub global_post_insert: PathBuf,
+
+    pub filemap: Vec<PathBuf>, // mapped to index
 }
 
 pub struct FileGroup {
@@ -20,14 +26,14 @@ pub struct FileGroup {
     pub convert_html: bool,
 }
 
-pub struct ProjectContext {
-    pub input_folder: PathBuf,
-    pub output_folder: PathBuf,
-    pub global_pre_insert: PathBuf,
-    pub global_post_insert: PathBuf,
+// pub struct ProjectContext {
+//     pub input_folder: PathBuf,
+//     pub output_folder: PathBuf,
+//     pub global_pre_insert: PathBuf,
+//     pub global_post_insert: PathBuf,
 
-    pub filemap: Vec<PathBuf>, // mapped to index
-}
+//     pub filemap: Vec<PathBuf>, // mapped to index
+// }
 
 macro_rules! get_table_bool_or_default {
     ($table:ident, $key:expr, $default:expr) => {
@@ -59,13 +65,13 @@ pub fn parse_project(tomlpath: &Path) -> Project {
 
     let mut project: Project = Project {
         filegroups: Vec::new(),
-        context: ProjectContext {
-            input_folder: PathBuf::new(),
-            output_folder: PathBuf::new(),
-            global_pre_insert: PathBuf::new(),
-            global_post_insert: PathBuf::new(),
-            filemap: Vec::new(),
-        },
+        //context: ProjectContext {
+        input_folder: PathBuf::new(),
+        output_folder: PathBuf::new(),
+        global_pre_insert: PathBuf::new(),
+        global_post_insert: PathBuf::new(),
+        filemap: Vec::new(),
+        //},
     };
     let config = tomlfile
         .parse::<Table>()
@@ -81,24 +87,24 @@ pub fn parse_project(tomlpath: &Path) -> Project {
         .parent()
         .expect("Project file unreadable or missing.");
 
-    project.context.input_folder = PathBuf::from(get_table_string_or_default!(
+    project.input_folder = PathBuf::from(get_table_string_or_default!(
         settings_section,
         "inputFolder",
         "skid"
     ));
 
-    project.context.output_folder = PathBuf::from(get_table_string_or_default!(
+    project.output_folder = PathBuf::from(get_table_string_or_default!(
         settings_section,
         "outputFolder",
         "content"
     ));
 
-    project.context.global_pre_insert = project_root.join(get_table_string_or_default!(
+    project.global_pre_insert = project_root.join(get_table_string_or_default!(
         settings_section,
         "preInsertGlobal",
         ""
     ));
-    project.context.global_post_insert = project_root.join(get_table_string_or_default!(
+    project.global_post_insert = project_root.join(get_table_string_or_default!(
         settings_section,
         "postInsertGlobal",
         ""
@@ -112,7 +118,7 @@ pub fn parse_project(tomlpath: &Path) -> Project {
 
         let pre_insert = get_table_string_or_default!(filegroup_def, "preInsert", "");
         let post_insert = get_table_string_or_default!(filegroup_def, "postInsert", "");
-        let process = get_table_bool_or_default!(filegroup_def, "process", false);
+        let process = get_table_bool_or_default!(filegroup_def, "process", true);
         let convert_html = get_table_bool_or_default!(filegroup_def, "convertHTML", true);
         let extention = get_table_string_or_default!(filegroup_def, "outputExtention", "html");
 
@@ -142,10 +148,10 @@ pub fn parse_project(tomlpath: &Path) -> Project {
                 });
 
                 let mut new_file = crate::types::InputFile::new();
-                new_file.file_input = project.context.input_folder.clone();
+                new_file.file_input = project.input_folder.clone();
                 new_file.file_input.push(filename);
 
-                new_file.file_out = project.context.output_folder.clone();
+                new_file.file_out = project.output_folder.clone();
                 new_file.file_out.push(filename);
                 new_file.file_out.set_extension(extention);
 
@@ -171,7 +177,7 @@ pub trait Indexing {
     // fn section_name_for_index(&self, index: usize) -> String;
 }
 
-impl Indexing for ProjectContext {
+impl Indexing for Project {
     fn index_of_file(&mut self, f: &PathBuf) -> usize {
         let cannonical = f.canonicalize().unwrap();
         let mut index = 0;

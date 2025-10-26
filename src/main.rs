@@ -16,7 +16,7 @@ use crate::{
 use console::*;
 use macros::MACRO_LIST;
 use markdown::{CompileOptions, Constructs, Options, ParseOptions};
-use project::{parse_project, Indexing, ProjectContext};
+use project::{parse_project, Indexing, Project};
 use reservednames::RESERVED_NAMES_HTML;
 use std::{
     env,
@@ -30,6 +30,7 @@ use types::{InputFile, Token};
 // strings split on kind of abitrary chars..
 static DELIMITERS: &'static [char] = &[
     ' ', '\n', '\t', '(', ')', '{', '}', '[', ']', '<', '>', '\\', '\'', '\"', ';', '?', '^', '-',
+    '`',
 ];
 
 #[derive(PartialEq)]
@@ -75,22 +76,23 @@ fn main() {
     //     }
     // }
 
-    for group in &mut project.filegroups {
-        if !group.process {
+    for i in 0..project.filegroups.len() {
+        if !project.filegroups[i].process {
             continue;
         }
-        for infile in &mut group.files {
-            let contents =
-                fs::read_to_string(&infile.file_input).expect("File unreadable or missing");
-            let tokens =
-                split_to_tokens(contents, project.context.index_of_file(&infile.file_input));
+        let convert_html = project.filegroups[i].convert_html;
+        for k in 0..project.filegroups[i].files.len() {
+            let file_input = project.filegroups[i].files[k].file_input.clone();
+            let contents = fs::read_to_string(&project.filegroups[i].files[k].file_input)
+                .expect("File unreadable or missing");
+            let tokens = split_to_tokens(contents, project.index_of_file(&file_input));
 
-            let mut skid_context =
-                SkidContext::new(project.context.index_of_file(&infile.file_input));
+            let mut skid_context = SkidContext::new(project.index_of_file(&file_input));
             write_file(
-                infile,
-                group.convert_html,
-                &process_skid(&tokens, &mut project.context, &mut skid_context),
+                &project.filegroups[i].files[k].file_skidout.clone(),
+                &project.filegroups[i].files[k].file_out.clone(),
+                convert_html,
+                &process_skid(&tokens, &mut project, &mut skid_context),
             );
         }
     }
@@ -98,7 +100,7 @@ fn main() {
 
 fn find_and_run_macro(
     tokens_in: &[Token],
-    proj_context: &mut ProjectContext,
+    proj_context: &mut Project,
     skid_context: &mut SkidContext,
 ) -> Option<(Vec<Token>, usize)> {
     // (Output, to be consumed size)
@@ -288,7 +290,7 @@ fn find_and_run_macro(
 
 fn process_skid(
     tokens_in: &[Token],
-    proj_context: &mut ProjectContext,
+    proj_context: &mut Project,
     skid_context: &mut SkidContext,
 ) -> Vec<Token> {
     //}, context: &mut ProjectContext) {
@@ -351,21 +353,21 @@ fn process_skid(
     return tokens;
 }
 
-fn write_file(file: &InputFile, convert_html: bool, tokens: &[Token]) {
+fn write_file(file_skidout: &PathBuf, file_out: &PathBuf, convert_html: bool, tokens: &[Token]) {
     //println!("{:?}", tokens);
     let mut skid_output: String = "".to_string();
     for t in tokens {
         skid_output.push(t.contents);
     }
 
-    let mut folder = file.file_skidout.clone();
+    let mut folder = file_skidout.clone();
     folder.pop();
     if fs::create_dir_all(&folder).is_err() {
         error_generic(&format!("Could not make the folder {:?}", &folder));
     }
 
     if convert_html {
-        fs::write(&file.file_skidout, &skid_output).expect("Couldn't write skid to file");
+        fs::write(&file_skidout, &skid_output).expect("Couldn't write skid to file");
 
         //let html_output = markdown::to_html(&skid_output);
         let html_output = markdown::to_html_with_options(
@@ -392,14 +394,12 @@ fn write_file(file: &InputFile, convert_html: bool, tokens: &[Token]) {
             },
         )
         .unwrap();
-        fs::write(&file.file_out, &html_output).expect("Couldn't write output to file");
+        fs::write(&file_out, &html_output).expect("Couldn't write output to file");
     } else {
-        fs::write(&file.file_out, &skid_output).expect("Couldn't write output to file");
+        fs::write(&file_out, &skid_output).expect("Couldn't write output to file");
     }
     ok_generic(&format!(
         "{} written",
-        file.file_out
-            .to_str()
-            .unwrap_or("Couldnt Unwrap file_out name")
+        file_out.to_str().unwrap_or("Couldnt Unwrap file_out name")
     ));
 }

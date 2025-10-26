@@ -3,7 +3,7 @@ use std::{fs, path::PathBuf};
 use crate::{
     console::error_skid,
     macros::template::SkidTemplate,
-    project::{Indexing, ProjectContext},
+    project::{Indexing, Project},
     stringtools::split_to_tokens,
     types::{SkidContext, Token},
 };
@@ -11,7 +11,7 @@ use crate::{
 pub fn macro_insert(
     origin_index: usize,
     origin_line: usize,
-    context: &mut ProjectContext,
+    context: &mut Project,
     _skid_context: &mut SkidContext,
     args: &Vec<String>,
     _scope: &[Token],

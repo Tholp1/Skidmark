@@ -2,18 +2,18 @@ use std::process::exit;
 
 use colored::Colorize;
 
-use crate::project::{Indexing, ProjectContext};
+use crate::project::{Indexing, Project};
 
 pub fn error_generic(msg: &String) {
     println!("{} {}", "[ERROR]".red(), msg);
     exit(1);
 }
 
-pub fn error_skid(context: &ProjectContext, origin_index: usize, origin_line: usize, msg: &String) {
+pub fn error_skid(proj_context: &Project, origin_index: usize, origin_line: usize, msg: &String) {
     println!(
         "{} {}:{}; {}",
         "[ERROR]".red(),
-        context
+        proj_context
             .file_for_index(origin_index)
             .expect("Panic in the error func.... (file_for_index() was None!)")
             .into_os_string()
@@ -29,11 +29,11 @@ pub fn warn_generic(msg: &String) {
     println!("{} {}", "[WARN]".yellow(), msg);
 }
 
-pub fn warn_skid(context: &ProjectContext, origin_index: usize, origin_line: usize, msg: &String) {
+pub fn warn_skid(proj_context: &Project, origin_index: usize, origin_line: usize, msg: &String) {
     println!(
         "{} {}:{}; {}",
         "[WARN]".yellow(),
-        context
+        proj_context
             .file_for_index(origin_index)
             .expect("Panic in the warn func.... (file_for_index() was None!)")
             .into_os_string()
@@ -49,7 +49,7 @@ pub fn ok_generic(msg: &String) {
 }
 
 pub fn reminder_skid(
-    context: &ProjectContext,
+    proj_context: &Project,
     origin_index: usize,
     origin_line: usize,
     msg: &String,
@@ -57,7 +57,7 @@ pub fn reminder_skid(
     println!(
         "{} {}:{}; {}",
         "[REMINDER]".cyan(),
-        context
+        proj_context
             .file_for_index(origin_index)
             .expect("Panic in the warn func.... (file_for_index() was None!)")
             .into_os_string()

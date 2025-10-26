@@ -5,11 +5,11 @@
 use boa_engine::Context;
 
 use crate::{
-    project::ProjectContext,
+    project::Project,
     types::{SkidContext, Token},
 };
 
-type ClosureFunction = fn(&[Token], &mut ProjectContext, &mut SkidContext) -> Vec<Token>;
+type ClosureFunction = fn(&[Token], &mut Project, &mut SkidContext) -> Vec<Token>;
 
 pub struct Closure {
     pub opener: &'static str,
@@ -55,7 +55,7 @@ pub static CLOSURE_LIST: &'static [Closure] = &[
 
 fn closure_comment(
     _tokens: &[Token],
-    _project_context: &mut ProjectContext,
+    _project_context: &mut Project,
     _skid_context: &mut SkidContext,
 ) -> Vec<Token> {
     Vec::new()
@@ -63,7 +63,7 @@ fn closure_comment(
 
 fn closure_section(
     tokens: &[Token],
-    _project_context: &mut ProjectContext,
+    _project_context: &mut Project,
     _skid_context: &mut SkidContext,
 ) -> Vec<Token> {
     tokens.to_vec()
@@ -71,7 +71,7 @@ fn closure_section(
 
 fn closure_js(
     tokens: &[Token],
-    project_context: &mut ProjectContext,
+    project_context: &mut Project,
     skid_context: &mut SkidContext,
 ) -> Vec<Token> {
     Vec::new()

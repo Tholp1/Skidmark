@@ -1,6 +1,6 @@
 use crate::{
     console::error_skid,
-    project::ProjectContext,
+    project::Project,
     reservednames::{RESERVED_NAMES_HTML, RESERVED_NAMES_MISC},
     stringtools::{find_pattern, split_to_tokens, WhitespaceChecks},
     types::{IsScoped, SkidContext, Token},
@@ -36,7 +36,7 @@ impl SkidTemplate {
         //_file: &mut InputFile,
         origin_index: usize,
         origin_line: usize,
-        proj_context: &mut ProjectContext,
+        proj_context: &mut Project,
         args: &Vec<String>,
         scope: &[Token],
     ) -> Vec<Token> {
@@ -137,7 +137,7 @@ impl IsScoped for SkidTemplate {
 pub fn macro_template(
     origin_index: usize,
     origin_line: usize,
-    project_context: &mut ProjectContext,
+    project_context: &mut Project,
     skid_context: &mut SkidContext,
     args: &Vec<String>,
     scope: &[Token],

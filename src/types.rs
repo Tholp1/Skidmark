@@ -3,7 +3,7 @@ use std::path::PathBuf;
 use crate::{
     console::error_skid,
     macros::{simple_blocks::macro_comment, template::SkidTemplate},
-    project::ProjectContext,
+    project::Project,
 };
 
 pub struct Token {
@@ -42,7 +42,7 @@ impl SkidContext {
 }
 
 type MacroExpansion =
-    fn(usize, usize, &mut ProjectContext, &mut SkidContext, &Vec<String>, &[Token]) -> Vec<Token>;
+    fn(usize, usize, &mut Project, &mut SkidContext, &Vec<String>, &[Token]) -> Vec<Token>;
 // (
 //     origin_index: usize,
 //     origin_line: usize,
@@ -55,7 +55,7 @@ type MacroExpansion =
 pub struct Macro {
     pub symbol: &'static str,
     pub expansion: MacroExpansion,
-    pub has_scope: bool, //takes blocks of text input as well as parameters using [[{}]]
+    pub takes_block: bool, //takes blocks of text input as well as parameters using [[{}]]
     pub min_args: usize,
     pub max_args: usize,
 }
@@ -65,7 +65,7 @@ pub trait MacroExpand {
         &self,
         origin_index: usize,
         origin_line: usize,
-        context: &mut ProjectContext,
+        context: &mut Project,
         skid_context: &mut SkidContext,
         args: &Vec<String>,
         scope: &[Token],
@@ -81,7 +81,7 @@ impl Macro {
         Macro {
             symbol: "default_symbol",
             expansion: macro_comment,
-            has_scope: true,
+            takes_block: true,
             min_args: 0,
             max_args: usize::max_value(),
         }
@@ -93,7 +93,7 @@ impl MacroExpand for Macro {
         &self,
         origin_index: usize,
         origin_line: usize,
-        proj_context: &mut ProjectContext,
+        proj_context: &mut Project,
         skid_context: &mut SkidContext,
         args: &Vec<String>,
         block: &[Token],
@@ -117,7 +117,7 @@ impl MacroExpand for Macro {
 
 impl IsScoped for Macro {
     fn is_scoped(&self) -> bool {
-        self.has_scope
+        self.takes_block
     }
 }
 
