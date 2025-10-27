@@ -266,30 +266,27 @@ pub fn trim_whitespace_tokens(tokens: &[Token]) -> &[Token] {
     return &tokens[start..end];
 }
 
+// Find the first instance of the pattern
 pub fn find_pattern(tokens: &[Token], pat: String) -> Option<(usize, usize)> {
     // (startpoint, length)
-    // FIXME: this fucks up when the begining of a pattern is repeated
-    // ex. searching for "[[hello]]" in "[[[[hello]]" yeilds None
-    // ALSO, this is a coarse search, operating on tokens only, not the characters within
-    //
+
     let split_pattern = split_to_tokens(pat, 0);
     let mut pattern_index: usize = 0;
     let mut token_index: usize = 0;
-    let mut working_pattern_index: usize = 0;
 
-    for t in tokens {
-        if t.contents == split_pattern[pattern_index].contents {
-            pattern_index += 1;
-        } else {
-            pattern_index = 0;
-            working_pattern_index = token_index + 1;
+    while token_index < tokens.len() && tokens.len() - token_index >= split_pattern.len() {
+        for t in &tokens[token_index..] {
+            if t.contents == split_pattern[pattern_index].contents {
+                pattern_index += 1;
+                if pattern_index == split_pattern.len() {
+                    return Some((token_index, split_pattern.len()));
+                }
+            } else {
+                pattern_index = 0;
+                token_index += 1;
+                break;
+            }
         }
-
-        if pattern_index == split_pattern.len() {
-            return Some((working_pattern_index, split_pattern.len()));
-        }
-
-        token_index += 1;
     }
 
     None
