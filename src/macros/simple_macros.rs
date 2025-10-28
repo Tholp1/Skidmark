@@ -4,7 +4,6 @@ use std::process::exit;
 use chrono::Local;
 
 use crate::{
-    args,
     console::{error_skid, reminder_skid, warn_skid},
     project::{Indexing, Project},
     stringtools::split_to_tokens,

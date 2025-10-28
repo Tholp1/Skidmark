@@ -15,6 +15,7 @@ pub struct Project {
     pub global_post_insert: PathBuf,
 
     pub filemap: Vec<PathBuf>, // mapped to index
+    pub section_name_map: Vec<String>,
 }
 
 pub struct FileGroup {
@@ -65,13 +66,12 @@ pub fn parse_project(tomlpath: &Path) -> Project {
 
     let mut project: Project = Project {
         filegroups: Vec::new(),
-        //context: ProjectContext {
         input_folder: PathBuf::new(),
         output_folder: PathBuf::new(),
         global_pre_insert: PathBuf::new(),
         global_post_insert: PathBuf::new(),
         filemap: Vec::new(),
-        //},
+        section_name_map: Vec::new(),
     };
     let config = tomlfile
         .parse::<Table>()
@@ -173,8 +173,8 @@ pub trait Indexing {
     fn file_for_index(&self, i: usize) -> Option<PathBuf>;
     fn file_for_index_canonical(&self, i: usize) -> Option<&PathBuf>;
 
-    // fn index_of_section_name(&mut self, name: String) -> usize;
-    // fn section_name_for_index(&self, index: usize) -> String;
+    fn index_of_section_name(&mut self, name: &String) -> usize;
+    fn section_name_for_index(&self, index: usize) -> Option<&String>;
 }
 
 impl Indexing for Project {
@@ -204,5 +204,25 @@ impl Indexing for Project {
             return None;
         }
         return Some(&self.filemap[i]);
+    }
+
+    // Some weirdly placed + and - 1 because 0 is the default index
+    fn index_of_section_name(&mut self, name: &String) -> usize {
+        let mut index = 0;
+        while index < self.section_name_map.len() {
+            if *name == self.section_name_map[index] {
+                return index + 1;
+            }
+            index += 1;
+        }
+        self.section_name_map.push(name.clone());
+        return self.section_name_map.len();
+    }
+
+    fn section_name_for_index(&self, index: usize) -> Option<&String> {
+        if (index - 1) >= self.section_name_map.len() {
+            return None;
+        }
+        return Some(&self.section_name_map[index - 1]);
     }
 }

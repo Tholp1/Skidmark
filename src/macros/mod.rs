@@ -18,7 +18,7 @@ pub static MACRO_LIST: &'static [Macro] = &[
         expansion: macro_insert,
         takes_block: false,
         min_args: 1,
-        max_args: 1,
+        max_args: usize::max_value(),
     },
     Macro {
         symbol: "time",

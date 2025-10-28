@@ -12,7 +12,8 @@ pub struct Token {
     pub origin_index: usize,
     pub template_origin: usize,
     pub origin_line: usize,
-    pub section_name_index: usize,
+    pub section_index: usize,
+    pub pre_proccessed: bool,
 }
 
 impl PartialEq<char> for Token {
@@ -134,20 +135,15 @@ impl InputFile {
 impl Token {
     pub fn new(contents: char, origin_file: usize, line_number: usize) -> Token {
         Token {
-            contents: contents,
+            contents,
             origin_index: origin_file,
             template_origin: origin_file,
             origin_line: line_number,
-            section_name_index: 0,
+            section_index: 0,
+            pre_proccessed: false,
         }
     }
 }
-
-// impl ToString for Token {
-//     fn to_string(&self) -> String {
-//         return self.contents.clone();
-//     }
-// }
 
 impl Clone for Token {
     fn clone(&self) -> Self {
@@ -156,7 +152,9 @@ impl Clone for Token {
             self.origin_index.clone(),
             self.origin_line,
         );
+        t.section_index = self.section_index;
         t.template_origin = self.template_origin;
+        t.pre_proccessed = self.pre_proccessed;
         return t;
     }
 }

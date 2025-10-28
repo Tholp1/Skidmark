@@ -1,5 +1,4 @@
 mod args;
-mod closures;
 mod console;
 mod macros;
 mod project;
@@ -24,7 +23,7 @@ use std::{
     path::PathBuf,
 };
 use stringtools::{collect_arguments, collect_block, split_to_tokens};
-use types::{InputFile, Token};
+use types::Token;
 
 // really need to change this whole thing to work with characters rather than
 // strings split on kind of abitrary chars..
@@ -58,7 +57,7 @@ fn main() {
         project_path = project_folder.clone();
         project_path.push("skidmark.toml");
     }
-    println!("Operatting on {:?}", &project_path.as_os_str());
+    info_generic(&format!("Operatting on {:?}", &project_path.as_os_str()));
     assert!(env::set_current_dir(&project_folder).is_ok());
 
     let mut project = parse_project(&project_path);
@@ -69,7 +68,7 @@ fn main() {
         num = num + group.files.len();
     }
 
-    println!("Proccesing {} files.", num);
+    info_generic(&format!("Proccesing {} files.", num));
     // for group in &mut project.filegroups {
     //     for infile in &mut group.files {
     //         process_skid(infile, group.convert_html, &mut project.context);
@@ -288,7 +287,7 @@ fn find_and_run_macro(
     None
 }
 
-fn process_skid(
+pub fn process_skid(
     tokens_in: &[Token],
     proj_context: &mut Project,
     skid_context: &mut SkidContext,
@@ -306,6 +305,11 @@ fn process_skid(
     let mut working_index = 0;
 
     while working_index < tokens.len() {
+        if tokens[working_index].pre_proccessed {
+            working_index += 1;
+            continue;
+        }
+
         if tokens[working_index] == '\\' && !escaped {
             tokens[working_index].contents = '\0'; // skip over this later when outputting to avoid shifting memory rn
             escaped = true;

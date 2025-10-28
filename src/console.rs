@@ -67,3 +67,7 @@ pub fn reminder_skid(
         msg
     );
 }
+
+pub fn info_generic(msg: &String) {
+    println!("{} {}", "[INFO]".purple(), msg);
+}

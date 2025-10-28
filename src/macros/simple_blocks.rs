@@ -1,8 +1,6 @@
 // This file for implementations of short blocks, im qualifying that as less than 30ish lines
 use crate::{
-    console::*,
-    project::Project,
-    stringtools::TokenTools,
+    project::{Indexing, Project},
     types::{SkidContext, Token},
 };
 
@@ -20,15 +18,25 @@ pub fn macro_comment(
 pub fn macro_section(
     _origin_index: usize,
     _origin_line: usize,
-    _context: &mut Project,
+    proj_context: &mut Project,
     _skid_context: &mut SkidContext,
-    _args: &Vec<String>,
+    args: &Vec<String>,
     scope: &[Token],
 ) -> Vec<Token> {
     let mut tokens = Vec::new();
-    for tok in scope {
-        tokens.push(tok.clone());
+    if args.len() == 1 {
+        let section_index = proj_context.index_of_section_name(&args[0]);
+        for tok in scope {
+            let mut new = tok.clone();
+            new.section_index = section_index;
+            tokens.push(new);
+        }
+    } else {
+        for tok in scope {
+            tokens.push(tok.clone());
+        }
     }
+
     return tokens;
 }
 

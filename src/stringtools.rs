@@ -1,6 +1,9 @@
 use super::DELIMITERS;
 use crate::types::Token;
 
+//TODO: Theres a couple functions that are still written like tokens are strings not chars, they work fine
+// for now but they may need to be changed later
+
 pub fn collect_arguments(tokens: &[Token]) -> Option<(Vec<String>, usize)> {
     // Returns arguments vec and number of tokens to be consumed
     //let mut output = Vec::new();
