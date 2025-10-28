@@ -24,7 +24,7 @@ pub static MACRO_LIST: &'static [Macro] = &[
         symbol: "time",
         expansion: macro_time,
         takes_block: false,
-        min_args: 1,
+        min_args: 0,
         max_args: 1,
     },
     Macro {

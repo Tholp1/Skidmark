@@ -19,22 +19,16 @@ pub fn macro_time(
     _scope: &[Token],
 ) -> Vec<Token> {
     let t = Local::now();
-
-    if args.len() != 1 {
-        error_skid(
-            context,
-            origin_index,
-            origin_line,
-            &format!(
-                "Time only accepts 1 argument, got given {} ({:?})",
-                args.len(),
-                args
-            ),
-        );
-        exit(1);
+    let fmt =
+    if args.len() == 0 {
+        &"%+".to_string() // RFC-3339
     }
+    else
+    {
+        &args[0]
+    };
 
-    return split_to_tokens(t.format(&args[0]).to_string(), origin_index);
+    return split_to_tokens(t.format(fmt).to_string(), origin_index);
 }
 
 pub fn macro_filename(
