@@ -19,12 +19,9 @@ pub fn macro_time(
     _scope: &[Token],
 ) -> Vec<Token> {
     let t = Local::now();
-    let fmt =
-    if args.len() == 0 {
+    let fmt = if args.len() == 0 {
         &"%+".to_string() // RFC-3339
-    }
-    else
-    {
+    } else {
         &args[0]
     };
 

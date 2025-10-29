@@ -15,10 +15,19 @@ pub struct SkidTemplate {
 
     pub has_scope: bool,
     pub allows_trailing_args: bool,
+
+    pub origin_index: usize,
+    pub origin_line: usize,
 }
 
 impl SkidTemplate {
-    pub fn new(name: String, args: &[String], tokens: &[Token]) -> SkidTemplate {
+    pub fn new(
+        name: String,
+        args: &[String],
+        tokens: &[Token],
+        origin_index: usize,
+        origin_line: usize,
+    ) -> SkidTemplate {
         let scoped: bool = find_pattern(&tokens, "[[{}]]".into()).is_some();
         let trailing: bool = find_pattern(&tokens, "[[..]]".into()).is_some()
             || find_pattern(&tokens, "[[\"..\"]]".into()).is_some();
@@ -29,6 +38,8 @@ impl SkidTemplate {
             tokens: tokens.to_vec(),
             has_scope: scoped,
             allows_trailing_args: trailing,
+            origin_index,
+            origin_line,
         }
     }
     pub fn expand(
@@ -144,6 +155,10 @@ pub fn macro_template(
 ) -> Vec<Token> {
     for t in skid_context.templates.iter().as_ref() {
         if t.symbol == args[0] {
+            // If its the same file and line then we know its the same exact thing, just skip over it
+            if t.origin_index == origin_index && t.origin_line == origin_line {
+                return Vec::new();
+            }
             error_skid(
                 project_context,
                 origin_index,
@@ -241,7 +256,13 @@ pub fn macro_template(
         );
     }
 
-    let template = SkidTemplate::new(args[0].clone(), &args[1..], scope);
+    let template = SkidTemplate::new(
+        args[0].clone(),
+        &args[1..],
+        scope,
+        origin_index,
+        origin_line,
+    );
     skid_context.templates.push(template);
 
     return Vec::new();
