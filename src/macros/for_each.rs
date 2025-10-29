@@ -139,9 +139,9 @@ pub fn macro_for_each_file_in_group_reverse(
     scope: &[Token],
 ) -> Vec<Token> {
     let mut files: Vec<String> = Vec::new();
-    for g in proj_context.filegroups.iter().rev() {
+    for g in &proj_context.filegroups {
         if g.name == args[1] {
-            for f in &g.files {
+            for f in g.files.iter().rev() {
                 let path = f
                     .file_input
                     .strip_prefix(&proj_context.input_folder)
