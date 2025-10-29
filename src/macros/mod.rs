@@ -98,4 +98,11 @@ pub static MACRO_LIST: &'static [Macro] = &[
         min_args: 2,
         max_args: 2,
     },
+    Macro {
+        symbol: "for_each_file_in_group_reverse",
+        expansion: macro_for_each_file_in_group_reverse,
+        takes_block: true,
+        min_args: 2,
+        max_args: 2,
+    },
 ];

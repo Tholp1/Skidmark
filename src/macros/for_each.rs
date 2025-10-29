@@ -129,3 +129,33 @@ pub fn macro_for_each_file_in_group(
         scope,
     );
 }
+
+pub fn macro_for_each_file_in_group_reverse(
+    origin_index: usize,
+    origin_line: usize,
+    proj_context: &mut Project,
+    _skid_context: &mut SkidContext,
+    args: &Vec<String>,
+    scope: &[Token],
+) -> Vec<Token> {
+    let mut files: Vec<String> = Vec::new();
+    for g in proj_context.filegroups.iter().rev() {
+        if g.name == args[1] {
+            for f in &g.files {
+                let path = f
+                    .file_input
+                    .strip_prefix(&proj_context.input_folder)
+                    .unwrap();
+                files.push(path.to_str().unwrap().into());
+            }
+        }
+    }
+    return for_each_base(
+        &args[0],
+        &files,
+        proj_context,
+        origin_index,
+        origin_line,
+        scope,
+    );
+}
