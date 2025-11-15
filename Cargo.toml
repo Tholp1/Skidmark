@@ -1,7 +1,8 @@
 [package]
 name = "skidmark"
-version = "0.1.0-ALPHA"
+version = "2025.11.14"
 edition = "2021"
+repository = "https://github.com/Tholp1/Skidmark" # for cargo-dist, also available at https://tangled.org/@tholps.site/skidmark
 
 [dependencies]
 boa_engine = "0.20.0"
@@ -12,3 +13,8 @@ glob = "0.3.2"
 markdown = "1.0.0"
 serde = "1.0.218"
 toml = "0.8.19"
+
+# The profile that 'dist' will build with
+[profile.dist]
+inherits = "release"
+lto = "thin"
