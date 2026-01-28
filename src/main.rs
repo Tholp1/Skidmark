@@ -93,6 +93,7 @@ fn main() {
                 &project.filegroups[i].files[k].file_skidout.clone(),
                 &project.filegroups[i].files[k].file_out.clone(),
                 convert_html,
+                project.write_skidout,
                 &process_skid(&tokens, &mut project, &mut skid_context),
                 file_start,
             );
@@ -368,6 +369,7 @@ fn write_file(
     file_skidout: &PathBuf,
     file_out: &PathBuf,
     convert_html: bool,
+    write_skidout: bool,
     tokens: &[Token],
     file_start: Instant,
 ) {
@@ -388,8 +390,9 @@ fn write_file(
     }
 
     if convert_html {
-        fs::write(&file_skidout, &skid_output).expect("Couldn't write skid to file");
-
+        if write_skidout {
+            fs::write(&file_skidout, &skid_output).expect("Couldn't write skid to file");
+        }
         //let html_output = markdown::to_html(&skid_output);
         let html_output = markdown::to_html_with_options(
             &skid_output,

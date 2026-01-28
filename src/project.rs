@@ -14,6 +14,8 @@ pub struct Project {
     pub global_pre_insert: PathBuf,
     pub global_post_insert: PathBuf,
 
+    pub write_skidout: bool,
+
     pub filemap: Vec<PathBuf>, // mapped to index
     pub section_name_map: Vec<String>,
 }
@@ -70,6 +72,8 @@ pub fn parse_project(tomlpath: &Path) -> Project {
         output_folder: PathBuf::new(),
         global_pre_insert: PathBuf::new(),
         global_post_insert: PathBuf::new(),
+
+        write_skidout: true,
         filemap: Vec::new(),
         section_name_map: Vec::new(),
     };
@@ -109,6 +113,8 @@ pub fn parse_project(tomlpath: &Path) -> Project {
         "postInsertGlobal",
         ""
     ));
+
+    project.write_skidout = get_table_bool_or_default!(settings_section, "writeSkidout", false);
 
     for (k, v) in filegroups_section {
         if !v.is_table() {

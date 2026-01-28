@@ -256,7 +256,7 @@ pub fn next_nonwhitespace_token(tokens: &Vec<Token>, index: usize) -> Option<usi
 //trim whitespace from the ends
 pub fn trim_whitespace_tokens(tokens: &[Token]) -> &[Token] {
     if tokens.len() == 0 {
-        return  tokens;
+        return tokens;
     }
 
     let mut start: usize = 0;
