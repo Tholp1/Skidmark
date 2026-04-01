@@ -8,7 +8,7 @@ mod types;
 
 use crate::{
     reservednames::RESERVED_NAMES_MISC,
-    stringtools::TokenTools,
+    stringtools::{find_and_execute_lua_block, TokenTools},
     types::{IsScoped, MacroExpand, SkidContext},
 };
 
@@ -204,8 +204,9 @@ fn find_and_run_macro(
             }
             return None;
         }
-
-        let args_result = collect_arguments(&tokens_in[chars_consumed..]);
+        let scoped = expander.is_scoped();
+        let args_result =
+            collect_arguments(&tokens_in[chars_consumed..], proj_context, skid_context);
         if args_result.is_none() {
             error_skid(
                 proj_context,
@@ -220,7 +221,7 @@ fn find_and_run_macro(
         (args, consumed_by_args) = args_result.unwrap();
         chars_consumed += consumed_by_args;
 
-        if expander.is_scoped() {
+        if scoped {
             let block_result = collect_block(&tokens_in[chars_consumed..]);
             if block_result.is_none() {
                 error_skid(
@@ -244,10 +245,10 @@ fn find_and_run_macro(
     match ephemeral_type {
         EphemeralType::Normal => return_empty = false,
         EphemeralType::Ephemeral => {
-            return_empty = skid_context.file_index != tokens_in[0].origin_index
+            return_empty = skid_context.file_id != tokens_in[0].origin_index
         }
         EphemeralType::InverseEphemeral => {
-            return_empty = skid_context.file_index == tokens_in[0].origin_index
+            return_empty = skid_context.file_id == tokens_in[0].origin_index
         }
     }
 
@@ -345,14 +346,17 @@ pub fn process_skid(
             }
         }
 
-        // Not a macro or template, look through our closures
-        // for c in CLOSURE_LIST
-        // {
-        //     if tokens[working_index].contents.starts_with(c.opener)
-        //     {
-
-        //     }
-        // }
+        if tokens[working_index] == '$' && !escaped {
+            let ret =
+                find_and_execute_lua_block(&tokens[working_index..], proj_context, skid_context);
+            if ret.is_some() {
+                let (expansion, consumed) = ret.unwrap();
+                tokens.splice(working_index..working_index + consumed, expansion);
+            } else {
+                working_index += 1;
+            }
+            continue;
+        }
 
         working_index += 1;
 

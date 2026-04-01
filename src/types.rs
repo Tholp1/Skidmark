@@ -1,5 +1,7 @@
 use std::path::PathBuf;
 
+use mlua::Lua;
+
 use crate::{
     console::error_skid,
     macros::{simple_blocks::macro_comment, template::SkidTemplate},
@@ -30,14 +32,16 @@ pub struct InputFile {
 
 pub struct SkidContext {
     pub templates: Vec<SkidTemplate>,
-    pub file_index: usize,
+    pub file_id: usize,
+    pub lua: Lua,
 }
 
 impl SkidContext {
-    pub fn new(file_index: usize) -> SkidContext {
+    pub fn new(file_id: usize) -> SkidContext {
         SkidContext {
             templates: Vec::new(),
-            file_index,
+            file_id,
+            lua: Lua::new(),
         }
     }
 }

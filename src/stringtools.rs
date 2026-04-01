@@ -1,10 +1,21 @@
+use mlua::ObjectLike;
+
 use super::DELIMITERS;
-use crate::types::Token;
+use crate::{
+    console::error_skid,
+    process_skid,
+    project::Project,
+    types::{SkidContext, Token},
+};
 
 //TODO: Theres a couple functions that are still written like tokens are strings not chars, they work fine
 // for now but they may need to be changed later
 
-pub fn collect_arguments(tokens: &[Token]) -> Option<(Vec<String>, usize)> {
+pub fn collect_arguments(
+    tokens: &[Token],
+    proj_context: &mut Project,
+    skid_context: &mut SkidContext,
+) -> Option<(Vec<String>, usize)> {
     // Returns arguments vec and number of tokens to be consumed
     //let mut output = Vec::new();
 
@@ -14,13 +25,13 @@ pub fn collect_arguments(tokens: &[Token]) -> Option<(Vec<String>, usize)> {
     let mut arg = "".to_string();
     let mut args: Vec<String> = Vec::new();
 
-    let mut in_token_count = 0;
+    let mut consumed = 0;
     let mut exited_cleanly = false;
 
-    for tok in tokens {
-        let c = tok.contents;
+    while consumed < tokens.len() {
+        let c = tokens[consumed].contents;
 
-        in_token_count += 1;
+        consumed += 1;
         if c.is_whitespace() && !entered {
             continue;
         }
@@ -34,7 +45,7 @@ pub fn collect_arguments(tokens: &[Token]) -> Option<(Vec<String>, usize)> {
             break;
         }
 
-        if !quoted && tok.contents == ')' {
+        if !quoted && c == ')' {
             exited_cleanly = true;
             if !arg.is_empty() {
                 args.push(arg.clone());
@@ -58,6 +69,23 @@ pub fn collect_arguments(tokens: &[Token]) -> Option<(Vec<String>, usize)> {
             continue;
         }
 
+        if c == '$' && !escaped && !quoted {
+            let ret = find_and_execute_lua_block(&tokens[consumed - 1..], proj_context, skid_context);
+            if ret.is_some() {
+                let (result, lua_consumed) = ret.unwrap();
+                consumed += std::cmp::max(lua_consumed, 1) - 1;
+                
+                for t in &result {
+                    arg.push(t.contents);
+                }
+            }
+            else {
+                println!("was none : (");
+                arg.push('$');
+            }
+            continue;
+        }
+
         if c.is_whitespace() && !quoted {
             if !arg.is_empty() {
                 args.push(arg.clone());
@@ -69,9 +97,10 @@ pub fn collect_arguments(tokens: &[Token]) -> Option<(Vec<String>, usize)> {
     }
 
     if !entered || !exited_cleanly {
+         println!("was none but very bad : (");
         return None;
     }
-    return Some((args, in_token_count));
+    return Some((args, consumed));
 }
 
 pub fn collect_block(tokens: &[Token]) -> Option<(Vec<Token>, usize)> {
@@ -174,6 +203,115 @@ pub fn collect_block(tokens: &[Token]) -> Option<(Vec<Token>, usize)> {
     block.drain(..3);
     block.drain(block.len() - 2..);
     return Some((block, tokens_consumed));
+}
+
+// Call this when you think it might be a lua block, ie $ is the current token's content
+// (Output, consumed)
+pub fn find_and_execute_lua_block(
+    tokens: &[Token],
+    proj_context: &mut Project,
+    skid_context: &mut SkidContext,
+) -> Option<(Vec<Token>, usize)> {
+    if tokens.len() < 3 {
+        return None;
+    }
+    if tokens[0].contents != '$' || tokens[1].contents != '[' {
+        return None;
+    }
+
+    #[derive(PartialEq)]
+    enum QuoteType {
+        UnQuoted,
+        DoubledQuoutes,
+        SingleQuotes,
+        // Lua also has [[...]] strings for multiline but we don't need to specially keep track of them
+    }
+
+    let mut quoted = QuoteType::UnQuoted;
+    let mut escaped = false;
+    let mut brackets = 0;
+    let mut consumed: usize = 1;
+    let mut exited_cleanly = false;
+    // Look for the end of th $[] block
+    for t in &tokens[1..] {
+        consumed += 1;
+
+        if quoted == QuoteType::UnQuoted && t.contents == '[' && !escaped {
+            brackets += 1;
+            continue;
+        }
+
+        if quoted == QuoteType::UnQuoted && t.contents == ']' && !escaped {
+            brackets -= 1;
+            if brackets == 0 {
+                exited_cleanly = true;
+                break;
+            }
+            continue;
+        }
+
+        if quoted == QuoteType::UnQuoted && t.contents == '"' && !escaped {
+            quoted = QuoteType::DoubledQuoutes;
+            continue;
+        }
+
+        if quoted == QuoteType::UnQuoted && t.contents == '\'' && !escaped {
+            quoted = QuoteType::SingleQuotes;
+            continue;
+        }
+
+        if quoted == QuoteType::DoubledQuoutes && t.contents == '"' && !escaped {
+            quoted = QuoteType::UnQuoted;
+            continue;
+        }
+
+        if quoted == QuoteType::SingleQuotes && t.contents == '\'' && !escaped {
+            quoted = QuoteType::UnQuoted;
+            continue;
+        }
+
+        if t.contents == '\\' && !escaped {
+            escaped = true;
+            continue;
+        }
+
+        if escaped {
+            escaped = false;
+        }
+    }
+
+    if !exited_cleanly {
+        return None;
+    }
+
+    // Process embeded macros first
+    let out = process_skid(&tokens[2..consumed - 1], proj_context, skid_context);
+    let trimmed = trim_whitespace_tokens(&out);
+    let mut string: String = "".to_string();
+    for t in trimmed {
+        string.push(t.contents);
+    }
+
+    let ret: Result<mlua::Value, mlua::Error> = skid_context.lua.load(string).eval();
+    if ret.is_err() {
+        error_skid(
+            proj_context,
+            tokens[0].origin_index,
+            tokens[0].origin_line,
+            &ret.err()?.to_string(),
+        );
+        return None;
+    }
+
+    if ret.as_ref().unwrap().is_nil() {
+        return Some((Vec::new(), consumed));
+    }
+
+    let mut return_tokens = split_to_tokens(ret.unwrap().to_string().unwrap(), tokens[0].origin_index);
+    for t in &mut return_tokens {
+        t.pre_proccessed = true;
+    }
+    Some((return_tokens, consumed))
 }
 
 // Theres no std function to have the delimiters be their own element in the out vector
