@@ -57,7 +57,7 @@ pub static MACRO_LIST: &'static [Macro] = &[
     },
     // Scoped
     Macro {
-        symbol: "comment", // Nothing
+        symbol: "comment", // Removes its block
         expansion: macro_comment,
         takes_block: true,
         min_args: 0,
@@ -71,7 +71,7 @@ pub static MACRO_LIST: &'static [Macro] = &[
         max_args: 1,
     },
     Macro {
-        symbol: "section",
+        symbol: "section", // Define a (named) section
         expansion: macro_section,
         takes_block: true,
         min_args: 0,
@@ -105,4 +105,11 @@ pub static MACRO_LIST: &'static [Macro] = &[
         min_args: 2,
         max_args: 2,
     },
+    Macro { // Marks the block to not be processed
+        symbol: "skip",
+        expansion: macro_skip,
+        takes_block: true,
+        min_args: 0,
+        max_args: 0
+    }
 ];

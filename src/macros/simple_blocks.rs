@@ -61,3 +61,18 @@ pub fn macro_repeat(
     }
     return tokens;
 }
+
+pub fn macro_skip (
+    _origin_index: usize,
+    _origin_line: usize,
+    _context: &mut Project,
+    _skid_context: &mut SkidContext,
+    _args: &Vec<String>,
+    scope: &[Token],
+) -> Vec<Token> {
+    let mut out = scope.to_vec();
+    for t in &mut out {
+        t.pre_proccessed = true;
+    }
+    return out;
+}
