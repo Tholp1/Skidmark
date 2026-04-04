@@ -80,7 +80,6 @@ pub fn collect_arguments(
                 }
             }
             else {
-                println!("was none : (");
                 arg.push('$');
             }
             continue;
@@ -97,7 +96,6 @@ pub fn collect_arguments(
     }
 
     if !entered || !exited_cleanly {
-         println!("was none but very bad : (");
         return None;
     }
     return Some((args, consumed));

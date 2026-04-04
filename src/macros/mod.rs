@@ -111,5 +111,12 @@ pub static MACRO_LIST: &'static [Macro] = &[
         takes_block: true,
         min_args: 0,
         max_args: 0
-    }
+    },
+    Macro {
+        symbol: "if",
+        expansion: macro_if,
+        takes_block: true,
+        min_args: 0, // lua block with nil result is just blank 
+        max_args: 1
+    },
 ];

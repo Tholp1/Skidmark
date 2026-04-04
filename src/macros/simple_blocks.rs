@@ -76,3 +76,17 @@ pub fn macro_skip (
     }
     return out;
 }
+
+pub fn macro_if (
+    _origin_index: usize,
+    _origin_line: usize,
+    _context: &mut Project,
+    _skid_context: &mut SkidContext,
+    args: &Vec<String>,
+    scope: &[Token],
+) -> Vec<Token> {
+    if args.len() == 0 || args[0] == "false" { // pretty much everything is truthy https://www.lua.org/pil/2.2.html
+        return Vec::new();
+    }
+    return scope.to_vec();
+}
