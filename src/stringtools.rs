@@ -294,7 +294,7 @@ pub fn find_and_execute_lua_block(
     if ret.is_err() {
         error_skid(
             proj_context,
-            tokens[0].origin_index,
+            tokens[0].template_origin,
             tokens[0].origin_line,
             &ret.err()?.to_string(),
         );

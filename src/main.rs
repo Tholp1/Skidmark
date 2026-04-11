@@ -88,7 +88,7 @@ fn main() {
                 .expect("File unreadable or missing");
             let tokens = split_to_tokens(contents, project.index_of_file(&file_input));
 
-            let mut skid_context = SkidContext::new(project.index_of_file(&file_input));
+            let mut skid_context = SkidContext::new(project.index_of_file(&file_input), i);
             write_file(
                 &project.filegroups[i].files[k].file_skidout.clone(),
                 &project.filegroups[i].files[k].file_out.clone(),

@@ -33,14 +33,16 @@ pub struct InputFile {
 pub struct SkidContext {
     pub templates: Vec<SkidTemplate>,
     pub file_id: usize,
+    pub group_id: usize,
     pub lua: Lua,
 }
 
 impl SkidContext {
-    pub fn new(file_id: usize) -> SkidContext {
+    pub fn new(file_id: usize, group_id: usize) -> SkidContext {
         SkidContext {
             templates: Vec::new(),
             file_id,
+            group_id,
             lua: Lua::new(),
         }
     }

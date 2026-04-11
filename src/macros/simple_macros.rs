@@ -120,3 +120,14 @@ pub fn macro_reminder(
     reminder_skid(context, origin_index, origin_line, &args[0]);
     Vec::new()
 }
+
+pub fn macro_groupname(
+    origin_index: usize,
+    _origin_line: usize,
+    context: &mut Project,
+    skid_context: &mut SkidContext,
+    _args: &Vec<String>,
+    _scope: &[Token],
+) -> Vec<Token> {
+    split_to_tokens(context.filegroups[skid_context.group_id].name.clone(), origin_index)
+}

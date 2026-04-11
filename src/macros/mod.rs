@@ -55,6 +55,13 @@ pub static MACRO_LIST: &'static [Macro] = &[
         min_args: 0,
         max_args: 1,
     },
+    Macro {
+        symbol: "groupname",
+        expansion: macro_groupname,
+        takes_block: false,
+        min_args: 0,
+        max_args: 0,
+    },
     // Scoped
     Macro {
         symbol: "comment", // Removes its block
