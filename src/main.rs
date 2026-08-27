@@ -67,6 +67,11 @@ fn main() {
 
     for group in &project.filegroups {
         num = num + group.files.len();
+        for f in &group.files {
+            if fs::exists(&f.file_input).is_err() || !fs::exists(&f.file_input).unwrap() {
+                error_generic(&format!("Input file {:?} in filegroup \"{}\" does not exist!", f.file_input, group.name));
+            }
+        }
     }
 
     info_generic(&format!("Proccesing {} files.", num));
