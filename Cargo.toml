@@ -1,6 +1,6 @@
 [package]
 name = "skidmark"
-version = "2026.1.24"
+version = "2026.8.27"
 edition = "2021"
 repository = "https://github.com/Tholp1/Skidmark" # for cargo-dist, also available at https://tangled.org/@tholps.site/skidmark
 
